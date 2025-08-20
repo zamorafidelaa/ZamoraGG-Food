@@ -22,15 +22,13 @@ public class OrderController {
     private CourierAssignmentRepository courierAssignmentRepository;
 
     @Autowired
-    private UserRepository userRepository; // untuk customer & courier
+    private UserRepository userRepository; 
 
-    // CREATE ORDER
     @PostMapping("/create")
     public Map<String, Object> createOrder(@RequestBody Order order) {
         Map<String, Object> response = new LinkedHashMap<>();
 
         try {
-            // Pastikan customer ada
             if (order.getCustomer() != null && order.getCustomer().getId() != null) {
                 User customer = userRepository.findById(order.getCustomer().getId()).orElse(null);
                 if (customer == null) {
@@ -41,10 +39,8 @@ public class OrderController {
                 order.setCustomer(customer);
             }
 
-            // Simpan order dulu (tanpa items)
             Order savedOrder = orderRepository.save(order);
 
-            // Simpan order items jika ada
             if (order.getItems() != null) {
                 for (OrderItem item : order.getItems()) {
                     item.setOrder(savedOrder);
@@ -52,7 +48,6 @@ public class OrderController {
                 }
             }
 
-            // Reload order beserta items
             savedOrder = orderRepository.findById(savedOrder.getId()).orElse(null);
             response.put("message", "Order successfully created");
             response.put("data", savedOrder);
@@ -64,7 +59,6 @@ public class OrderController {
         return response;
     }
 
-    // READ ALL
     @GetMapping("/get")
     public Map<String, Object> getAllOrders() {
         Map<String, Object> response = new LinkedHashMap<>();
@@ -74,7 +68,6 @@ public class OrderController {
         return response;
     }
 
-    // READ BY ID
     @GetMapping("/get/{id}")
     public Map<String, Object> getOrderById(@PathVariable Long id) {
         Map<String, Object> response = new LinkedHashMap<>();
@@ -89,7 +82,6 @@ public class OrderController {
         return response;
     }
 
-    // UPDATE ORDER (status, totalPrice, deliveryFee)
     @PutMapping("/update/{id}")
     public Map<String, Object> updateOrder(@PathVariable Long id, @RequestBody Order orderDetails) {
         Map<String, Object> response = new LinkedHashMap<>();
@@ -110,7 +102,6 @@ public class OrderController {
         return response;
     }
 
-    // DELETE ORDER
     @DeleteMapping("/delete/{id}")
     public Map<String, Object> deleteOrder(@PathVariable Long id) {
         Map<String, Object> response = new LinkedHashMap<>();
@@ -127,7 +118,6 @@ public class OrderController {
         return response;
     }
 
-    // ASSIGN COURIER
     @PostMapping("/{orderId}/assign-courier/{courierId}")
     public Map<String, Object> assignCourier(@PathVariable Long orderId, @PathVariable Long courierId) {
         Map<String, Object> response = new LinkedHashMap<>();

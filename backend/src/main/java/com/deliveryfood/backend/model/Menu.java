@@ -17,7 +17,7 @@ public class Menu {
     private String name;
     private Double price;
     private String description;
-    private String imageUrl;
+    // private String imageUrl;
 
     @ManyToOne
     @JoinColumn(name = "restaurant_id", referencedColumnName = "id")

@@ -24,12 +24,10 @@ public class MenuController {
     @Autowired
     private RestaurantRepository restaurantRepository;
 
-    // CREATE
     @PostMapping("/create")
     public Map<String, Object> createMenu(@RequestBody Menu menu) {
         Map<String, Object> response = new LinkedHashMap<>();
         try {
-            // Cek apakah restaurant ada
             Long restaurantId = menu.getRestaurant().getId();
             Restaurant restaurant = restaurantRepository.findById(restaurantId).orElse(null);
 
@@ -50,7 +48,6 @@ public class MenuController {
         return response;
     }
 
-    // READ ALL
     @GetMapping("/get")
     public Map<String, Object> getAllMenus() {
         Map<String, Object> response = new LinkedHashMap<>();
@@ -60,7 +57,6 @@ public class MenuController {
         return response;
     }
 
-    // READ BY ID
     @GetMapping("/get/{id}")
     public Map<String, Object> getMenuById(@PathVariable Long id) {
         Map<String, Object> response = new LinkedHashMap<>();
@@ -75,7 +71,6 @@ public class MenuController {
         return response;
     }
 
-    // UPDATE
 @PutMapping("/update/{id}")
 public Map<String, Object> updateMenu(@PathVariable Long id, @RequestBody Menu menuDetails) {
     Map<String, Object> response = new LinkedHashMap<>();
@@ -88,9 +83,8 @@ public Map<String, Object> updateMenu(@PathVariable Long id, @RequestBody Menu m
         existing.setName(menuDetails.getName());
         existing.setPrice(menuDetails.getPrice());
         existing.setDescription(menuDetails.getDescription());
-        existing.setImageUrl(menuDetails.getImageUrl());
+        // existing.setImageUrl(menuDetails.getImageUrl());
 
-        // Perbaikan: ambil Restaurant dari repository
         if (menuDetails.getRestaurant() != null && menuDetails.getRestaurant().getId() != null) {
             Long restaurantId = menuDetails.getRestaurant().getId();
             Restaurant restaurant = restaurantRepository.findById(restaurantId).orElse(null);
@@ -110,7 +104,6 @@ public Map<String, Object> updateMenu(@PathVariable Long id, @RequestBody Menu m
     return response;
 }
 
-    // DELETE
     @DeleteMapping("/delete/{id}")
     public Map<String, Object> deleteMenu(@PathVariable Long id) {
         Map<String, Object> response = new LinkedHashMap<>();
@@ -127,7 +120,6 @@ public Map<String, Object> updateMenu(@PathVariable Long id, @RequestBody Menu m
         return response;
     }
 
-    // SEARCH
     @GetMapping("/search")
     public Map<String, Object> searchMenus(@RequestParam String name) {
         Map<String, Object> response = new LinkedHashMap<>();
@@ -141,7 +133,6 @@ public Map<String, Object> updateMenu(@PathVariable Long id, @RequestBody Menu m
         return response;
     }
 
-    // SORT
     @GetMapping("/sort")
     public Map<String, Object> sortMenus(@RequestParam String by, @RequestParam(defaultValue = "asc") String order) {
         Map<String, Object> response = new LinkedHashMap<>();
