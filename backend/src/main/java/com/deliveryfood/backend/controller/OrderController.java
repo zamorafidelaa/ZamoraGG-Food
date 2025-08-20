@@ -22,7 +22,10 @@ public class OrderController {
     private CourierAssignmentRepository courierAssignmentRepository;
 
     @Autowired
-    private UserRepository userRepository; 
+    private UserRepository userRepository;
+
+    @Autowired
+    private MenuRepository menuRepository;
 
     @PostMapping("/create")
     public Map<String, Object> createOrder(@RequestBody Order order) {
@@ -43,6 +46,13 @@ public class OrderController {
 
             if (order.getItems() != null) {
                 for (OrderItem item : order.getItems()) {
+                    // ✅ fetch menu dari DB
+                    if (item.getMenu() != null && item.getMenu().getId() != null) {
+                        Menu menu = menuRepository.findById(item.getMenu().getId())
+                                .orElseThrow(() -> new RuntimeException(
+                                        "Menu with ID " + item.getMenu().getId() + " not found"));
+                        item.setMenu(menu);
+                    }
                     item.setOrder(savedOrder);
                     orderItemRepository.save(item);
                 }
@@ -118,28 +128,5 @@ public class OrderController {
         return response;
     }
 
-    @PostMapping("/{orderId}/assign-courier/{courierId}")
-    public Map<String, Object> assignCourier(@PathVariable Long orderId, @PathVariable Long courierId) {
-        Map<String, Object> response = new LinkedHashMap<>();
-        Order order = orderRepository.findById(orderId).orElse(null);
-        User courier = userRepository.findById(courierId).orElse(null);
-
-        if (order == null || courier == null) {
-            response.put("message", "Order or Courier not found");
-            response.put("data", null);
-            return response;
-        }
-
-        CourierAssignment assignment = new CourierAssignment();
-        assignment.setOrder(order);
-        assignment.setCourier(courier);
-        courierAssignmentRepository.save(assignment);
-
-        order.setStatus(Order.Status.ASSIGNED);
-        orderRepository.save(order);
-
-        response.put("message", "Courier successfully assigned to order");
-        response.put("data", assignment);
-        return response;
-    }
+    
 }
