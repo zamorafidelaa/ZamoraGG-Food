@@ -19,9 +19,6 @@ public class OrderController {
     private OrderItemRepository orderItemRepository;
 
     @Autowired
-    private CourierAssignmentRepository courierAssignmentRepository;
-
-    @Autowired
     private UserRepository userRepository;
 
     @Autowired
@@ -46,7 +43,6 @@ public class OrderController {
 
             if (order.getItems() != null) {
                 for (OrderItem item : order.getItems()) {
-                    // ✅ fetch menu dari DB
                     if (item.getMenu() != null && item.getMenu().getId() != null) {
                         Menu menu = menuRepository.findById(item.getMenu().getId())
                                 .orElseThrow(() -> new RuntimeException(

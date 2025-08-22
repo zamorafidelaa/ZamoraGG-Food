@@ -25,7 +25,6 @@ public class CourierAssignmentController {
     @Autowired
     private UserRepository userRepository;
 
-    // Assign courier ke order
     @PostMapping("/assign/{orderId}/{courierId}")
     public Map<String, Object> assignCourier(@PathVariable Long orderId, @PathVariable Long courierId) {
         Map<String, Object> response = new LinkedHashMap<>();
@@ -58,7 +57,6 @@ public class CourierAssignmentController {
         return response;
     }
 
-    // Get all assignments
     @GetMapping("/all")
     public Map<String, Object> getAllAssignments() {
         Map<String, Object> response = new LinkedHashMap<>();
@@ -68,7 +66,6 @@ public class CourierAssignmentController {
         return response;
     }
 
-    // Get assignments by courier
     @GetMapping("/courier/{courierId}")
     public Map<String, Object> getAssignmentsByCourier(@PathVariable Long courierId) {
         Map<String, Object> response = new LinkedHashMap<>();
@@ -86,7 +83,6 @@ public class CourierAssignmentController {
         return response;
     }
 
-    // Get assignment by order
     @GetMapping("/order/{orderId}")
     public Map<String, Object> getAssignmentsByOrder(@PathVariable Long orderId) {
         Map<String, Object> response = new LinkedHashMap<>();
