@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { Edit, Trash2 } from "lucide-react"; 
 
 const API_BASE = "http://localhost:8080/users";
 
@@ -126,7 +127,7 @@ const AdminCouriers = () => {
             <th className="p-2">ID</th>
             <th className="p-2">Name</th>
             <th className="p-2">Email</th>
-            <th className="p-2">Actions</th>
+            <th className="p-2 text-center">Actions</th>
           </tr>
         </thead>
         <tbody>
@@ -135,18 +136,20 @@ const AdminCouriers = () => {
               <td className="p-2">{c.id}</td>
               <td className="p-2">{c.name}</td>
               <td className="p-2">{c.email}</td>
-              <td className="p-2 flex gap-2">
+              <td className="p-2 flex gap-2 justify-center">
                 <button
                   onClick={() => openModal(c)}
-                  className="bg-yellow-500 text-white px-2 py-1 rounded hover:bg-yellow-600"
+                  className="bg-yellow-500 text-white p-2 rounded hover:bg-yellow-600 flex items-center"
+                  title="Edit Courier"
                 >
-                  Edit
+                  <Edit className="w-4 h-4" />
                 </button>
                 <button
                   onClick={() => handleDelete(c.id)}
-                  className="bg-red-600 text-white px-2 py-1 rounded hover:bg-red-700"
+                  className="bg-red-600 text-white p-2 rounded hover:bg-red-700 flex items-center"
+                  title="Delete Courier"
                 >
-                  Delete
+                  <Trash2 className="w-4 h-4" />
                 </button>
               </td>
             </tr>

@@ -33,7 +33,7 @@ public class RestaurantController {
         return ResponseEntity.ok("Restaurant with ID " + savedRestaurant.getId() + " successfully added!");
     }
 
-    @GetMapping("/get")
+    @GetMapping
     public List<Restaurant> getAllRestaurants() {
         return restaurantRepository.findAll();
     }
@@ -62,8 +62,6 @@ public class RestaurantController {
             restaurant.setName(updated.getName());
             restaurant.setAddress(updated.getAddress());
             restaurant.setPhone(updated.getPhone());
-            restaurant.setLatitude(updated.getLatitude());
-            restaurant.setLongitude(updated.getLongitude());
 
             Restaurant saved = restaurantRepository.save(restaurant);
 
