@@ -71,38 +71,38 @@ public class MenuController {
         return response;
     }
 
-@PutMapping("/update/{id}")
-public Map<String, Object> updateMenu(@PathVariable Long id, @RequestBody Menu menuDetails) {
-    Map<String, Object> response = new LinkedHashMap<>();
-    Menu existing = menuRepository.findById(id).orElse(null);
+    @PutMapping("/update/{id}")
+    public Map<String, Object> updateMenu(@PathVariable Long id, @RequestBody Menu menuDetails) {
+        Map<String, Object> response = new LinkedHashMap<>();
+        Menu existing = menuRepository.findById(id).orElse(null);
 
-    if (existing == null) {
-        response.put("message", "Menu with ID " + id + " not found");
-        response.put("data", null);
-    } else {
-        existing.setName(menuDetails.getName());
-        existing.setPrice(menuDetails.getPrice());
-        existing.setDescription(menuDetails.getDescription());
-        // existing.setImageUrl(menuDetails.getImageUrl());
+        if (existing == null) {
+            response.put("message", "Menu with ID " + id + " not found");
+            response.put("data", null);
+        } else {
+            existing.setName(menuDetails.getName());
+            existing.setPrice(menuDetails.getPrice());
+            existing.setDescription(menuDetails.getDescription());
+            // existing.setImageUrl(menuDetails.getImageUrl());
 
-        if (menuDetails.getRestaurant() != null && menuDetails.getRestaurant().getId() != null) {
-            Long restaurantId = menuDetails.getRestaurant().getId();
-            Restaurant restaurant = restaurantRepository.findById(restaurantId).orElse(null);
-            if (restaurant != null) {
-                existing.setRestaurant(restaurant);
-            } else {
-                response.put("message", "Restaurant with ID " + restaurantId + " not found");
-                response.put("data", null);
-                return response;
+            if (menuDetails.getRestaurant() != null && menuDetails.getRestaurant().getId() != null) {
+                Long restaurantId = menuDetails.getRestaurant().getId();
+                Restaurant restaurant = restaurantRepository.findById(restaurantId).orElse(null);
+                if (restaurant != null) {
+                    existing.setRestaurant(restaurant);
+                } else {
+                    response.put("message", "Restaurant with ID " + restaurantId + " not found");
+                    response.put("data", null);
+                    return response;
+                }
             }
-        }
 
-        Menu updated = menuRepository.save(existing);
-        response.put("message", "Menu with ID " + id + " successfully updated");
-        response.put("data", updated);
+            Menu updated = menuRepository.save(existing);
+            response.put("message", "Menu with ID " + id + " successfully updated");
+            response.put("data", updated);
+        }
+        return response;
     }
-    return response;
-}
 
     @DeleteMapping("/delete/{id}")
     public Map<String, Object> deleteMenu(@PathVariable Long id) {
@@ -163,4 +163,18 @@ public Map<String, Object> updateMenu(@PathVariable Long id, @RequestBody Menu m
         response.put("data", sorted);
         return response;
     }
+
+    @GetMapping("/getByRestaurant/{restaurantId}")
+    public Map<String, Object> getMenusByRestaurant(@PathVariable Long restaurantId) {
+        Map<String, Object> response = new LinkedHashMap<>();
+        List<Menu> menus = menuRepository.findAll().stream()
+                .filter(menu -> menu.getRestaurant() != null && menu.getRestaurant().getId().equals(restaurantId))
+                .collect(Collectors.toList());
+
+        response.put("message", menus.isEmpty() ? "No menus found for restaurant ID " + restaurantId
+                : "Successfully retrieved menus for restaurant ID " + restaurantId);
+        response.put("data", menus);
+        return response;
+    }
+
 }

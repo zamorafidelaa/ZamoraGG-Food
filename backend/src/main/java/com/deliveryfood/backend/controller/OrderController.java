@@ -29,34 +29,66 @@ public class OrderController {
         Map<String, Object> response = new LinkedHashMap<>();
 
         try {
-            if (order.getCustomer() != null && order.getCustomer().getId() != null) {
-                User customer = userRepository.findById(order.getCustomer().getId()).orElse(null);
-                if (customer == null) {
-                    response.put("message", "Customer with ID " + order.getCustomer().getId() + " not found");
-                    response.put("data", null);
-                    return response;
-                }
-                order.setCustomer(customer);
+            // ✅ validasi customer
+            if (order.getCustomer() == null || order.getCustomer().getId() == null) {
+                response.put("message", "Customer is required");
+                response.put("data", null);
+                return response;
             }
 
+            User customer = userRepository.findById(order.getCustomer().getId()).orElse(null);
+            if (customer == null) {
+                response.put("message", "Customer with ID " + order.getCustomer().getId() + " not found");
+                response.put("data", null);
+                return response;
+            }
+            order.setCustomer(customer);
+
+            // ✅ simpan order kosong dulu biar dapet ID
             Order savedOrder = orderRepository.save(order);
 
+            double subtotal = 0.0;
+            Set<Long> restoIds = new HashSet<>();
+
+            // ✅ proses item
             if (order.getItems() != null) {
                 for (OrderItem item : order.getItems()) {
                     if (item.getMenu() != null && item.getMenu().getId() != null) {
                         Menu menu = menuRepository.findById(item.getMenu().getId())
                                 .orElseThrow(() -> new RuntimeException(
                                         "Menu with ID " + item.getMenu().getId() + " not found"));
+
                         item.setMenu(menu);
+                        item.setOrder(savedOrder);
+
+                        // hitung subtotal
+                        subtotal += menu.getPrice() * item.getQuantity();
+
+                        // kumpulin restoId
+                        if (menu.getRestaurant() != null) {
+                            restoIds.add(menu.getRestaurant().getId());
+                        }
+
+                        orderItemRepository.save(item);
                     }
-                    item.setOrder(savedOrder);
-                    orderItemRepository.save(item);
                 }
             }
 
-            savedOrder = orderRepository.findById(savedOrder.getId()).orElse(null);
+            // ✅ hitung ongkir: 5rb + (resto - 1) * 2rb
+            double deliveryFee = 0.0;
+            if (!restoIds.isEmpty()) {
+                deliveryFee = 5000 + (restoIds.size() - 1) * 2000;
+            }
+
+            savedOrder.setDeliveryFee(deliveryFee);
+            savedOrder.setTotalPrice(subtotal + deliveryFee);
+
+            // ✅ update order dengan harga final
+            savedOrder = orderRepository.save(savedOrder);
+
             response.put("message", "Order successfully created");
             response.put("data", savedOrder);
+
         } catch (Exception e) {
             response.put("message", "Failed to create order: " + e.getMessage());
             response.put("data", null);
@@ -78,6 +110,7 @@ public class OrderController {
     public Map<String, Object> getOrderById(@PathVariable Long id) {
         Map<String, Object> response = new LinkedHashMap<>();
         Order order = orderRepository.findById(id).orElse(null);
+
         if (order == null) {
             response.put("message", "Order with ID " + id + " not found");
             response.put("data", null);
@@ -97,9 +130,16 @@ public class OrderController {
             response.put("message", "Order with ID " + id + " not found");
             response.put("data", null);
         } else {
-            existing.setStatus(orderDetails.getStatus());
-            existing.setTotalPrice(orderDetails.getTotalPrice());
-            existing.setDeliveryFee(orderDetails.getDeliveryFee());
+            if (orderDetails.getStatus() != null) {
+                existing.setStatus(orderDetails.getStatus());
+            }
+            if (orderDetails.getTotalPrice() != null) {
+                existing.setTotalPrice(orderDetails.getTotalPrice());
+            }
+            if (orderDetails.getDeliveryFee() != null) {
+                existing.setDeliveryFee(orderDetails.getDeliveryFee());
+            }
+
             Order updated = orderRepository.save(existing);
 
             response.put("message", "Order with ID " + id + " successfully updated");
@@ -123,5 +163,4 @@ public class OrderController {
         }
         return response;
     }
-
 }

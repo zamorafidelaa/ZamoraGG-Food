@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useContext, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
   Home,
@@ -9,151 +9,146 @@ import {
   LogOut,
   Menu as MenuIcon,
   X,
+  LogIn,
 } from "lucide-react";
+import { CartContext } from "../components/CartContext";
 
 const Header = () => {
   const navigate = useNavigate();
-  const role = localStorage.getItem("userRole"); // "CUSTOMER" kalau login
+  const [role, setRole] = useState(localStorage.getItem("userRole"));
+  const { cart, clearCart } = useContext(CartContext);
+  const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
   const [isOpen, setIsOpen] = useState(false);
 
+  // update role saat login/logout
+  useEffect(() => {
+    const handleStorage = () => setRole(localStorage.getItem("userRole"));
+    window.addEventListener("storage", handleStorage);
+    return () => window.removeEventListener("storage", handleStorage);
+  }, []);
+
   const handleLogout = () => {
-    if (!role) return;
-    localStorage.clear();
+    clearCart();
+    localStorage.removeItem("userId");
+    localStorage.removeItem("userRole");
+    localStorage.removeItem("userEmail");
+    setRole(null);
+    setIsOpen(false);
+    navigate("/");
+    window.dispatchEvent(new Event("storage"));
+  };
+
+  const handleLogin = () => {
     navigate("/login");
   };
 
   return (
     <header className="fixed top-0 left-0 w-full z-50 bg-white/70 backdrop-blur-md shadow-sm px-6 py-3 flex justify-between items-center">
-      {/* Logo */}
-      <div className="font-extrabold text-2xl tracking-wide text-blue-600">
-        <Link to="/" className="hover:text-blue-800 transition">
+      <div className="font-extrabold text-2xl text-blue-600">
+        <Link to="/">
           ZamoraGG <span className="text-blue-400">Food</span>
         </Link>
       </div>
 
-      {/* Desktop Navbar */}
       <nav className="hidden md:flex items-center gap-6 text-gray-700">
         {role === "CUSTOMER" && (
           <>
-            <Link
-              to="/"
-              className="flex items-center gap-1 hover:text-blue-500 transition"
-            >
-              <Home size={20} /> <span className="text-sm font-medium">Home</span>
+            <Link to="/" className="flex items-center gap-1">
+              <Home size={20} /> Home
             </Link>
-            <Link
-              to="/about"
-              className="flex items-center gap-1 hover:text-blue-500 transition"
-            >
-              <Info size={20} /> <span className="text-sm font-medium">About</span>
+            <Link to="/about" className="flex items-center gap-1">
+              <Info size={20} /> About
             </Link>
-            <Link
-              to="/menu"
-              className="flex items-center gap-1 hover:text-blue-500 transition"
-            >
-              <Utensils size={20} /> <span className="text-sm font-medium">Menu</span>
+            <Link to="/menu" className="flex items-center gap-1">
+              <Utensils size={20} /> Menu
             </Link>
-            <Link
-              to="/orders"
-              className="flex items-center gap-1 hover:text-blue-500 transition"
-            >
-              <ClipboardList size={20} />{" "}
-              <span className="text-sm font-medium">Orders</span>
+            <Link to="/orders" className="flex items-center gap-1">
+              <ClipboardList size={20} /> Orders
             </Link>
-            <Link
-              to="/cart"
-              className="hover:text-blue-500 transition relative"
-            >
+            <Link to="/cart" className="relative">
               <ShoppingCart size={22} />
+              {cartCount > 0 && (
+                <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center">
+                  {cartCount}
+                </span>
+              )}
             </Link>
           </>
         )}
 
-        {/* Logout button */}
-        <button
-          onClick={handleLogout}
-          disabled={!role}
-          className={`p-2 rounded-full shadow-md transition 
-            ${
-              role
-                ? "bg-blue-500 hover:bg-blue-600 text-white cursor-pointer"
-                : "bg-gray-300 text-gray-500 cursor-not-allowed"
-            }`}
-        >
-          <LogOut size={20} />
-        </button>
+        {/* Tombol login jika belum login */}
+        {!role && (
+          <button
+            onClick={handleLogin}
+            className="flex items-center gap-1 px-4 py-2 rounded-full bg-blue-500 text-white hover:bg-blue-600"
+          >
+            <LogIn size={18} /> Login
+          </button>
+        )}
+
+        {/* Tombol logout jika sudah login */}
+        {role && (
+          <button
+            onClick={handleLogout}
+            className="p-2 rounded-full bg-blue-500 text-white hover:bg-blue-600"
+          >
+            <LogOut size={20} />
+          </button>
+        )}
       </nav>
 
-      {/* Mobile Hamburger */}
+      {/* Mobile Menu */}
       <div className="md:hidden">
-        <button
-          onClick={() => setIsOpen(!isOpen)}
-          className="text-gray-700 focus:outline-none"
-        >
+        <button onClick={() => setIsOpen(!isOpen)}>
           {isOpen ? <X size={26} /> : <MenuIcon size={26} />}
         </button>
+        {isOpen && (
+          <div className="absolute top-16 left-0 w-full bg-white/95 backdrop-blur-md shadow-md py-4 flex flex-col gap-4 px-6">
+            {role === "CUSTOMER" && (
+              <>
+                <Link to="/" onClick={() => setIsOpen(false)} className="flex items-center gap-2">
+                  <Home size={20} /> Home
+                </Link>
+                <Link to="/about" onClick={() => setIsOpen(false)} className="flex items-center gap-2">
+                  <Info size={20} /> About
+                </Link>
+                <Link to="/menu" onClick={() => setIsOpen(false)} className="flex items-center gap-2">
+                  <Utensils size={20} /> Menu
+                </Link>
+                <Link to="/orders" onClick={() => setIsOpen(false)} className="flex items-center gap-2">
+                  <ClipboardList size={20} /> Orders
+                </Link>
+                <Link to="/cart" onClick={() => setIsOpen(false)} className="flex items-center gap-2 relative">
+                  <ShoppingCart size={20} /> Cart
+                  {cartCount > 0 && (
+                    <span className="ml-1 bg-red-500 text-white text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center">
+                      {cartCount}
+                    </span>
+                  )}
+                </Link>
+              </>
+            )}
+
+            {!role && (
+              <button
+                onClick={() => { setIsOpen(false); handleLogin(); }}
+                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-500 text-white hover:bg-blue-600"
+              >
+                <LogIn size={18} /> Login
+              </button>
+            )}
+
+            {role && (
+              <button
+                onClick={() => { setIsOpen(false); handleLogout(); }}
+                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-500 text-white hover:bg-blue-600"
+              >
+                <LogOut size={18} /> Logout
+              </button>
+            )}
+          </div>
+        )}
       </div>
-
-      {/* Mobile Menu */}
-      {isOpen && (
-        <div className="absolute top-16 left-0 w-full bg-white/95 backdrop-blur-md shadow-md py-4 flex flex-col gap-4 px-6 md:hidden">
-          {role === "CUSTOMER" && (
-            <>
-              <Link
-                to="/"
-                onClick={() => setIsOpen(false)}
-                className="flex items-center gap-2 text-gray-700 hover:text-blue-500"
-              >
-                <Home size={20} /> Home
-              </Link>
-              <Link
-                to="/about"
-                onClick={() => setIsOpen(false)}
-                className="flex items-center gap-2 text-gray-700 hover:text-blue-500"
-              >
-                <Info size={20} /> About
-              </Link>
-              <Link
-                to="/menu"
-                onClick={() => setIsOpen(false)}
-                className="flex items-center gap-2 text-gray-700 hover:text-blue-500"
-              >
-                <Utensils size={20} /> Menu
-              </Link>
-              <Link
-                to="/orders"
-                onClick={() => setIsOpen(false)}
-                className="flex items-center gap-2 text-gray-700 hover:text-blue-500"
-              >
-                <ClipboardList size={20} /> Orders
-              </Link>
-              <Link
-                to="/cart"
-                onClick={() => setIsOpen(false)}
-                className="flex items-center gap-2 text-gray-700 hover:text-blue-500"
-              >
-                <ShoppingCart size={20} /> Cart
-              </Link>
-            </>
-          )}
-
-          <button
-            onClick={() => {
-              handleLogout();
-              setIsOpen(false);
-            }}
-            disabled={!role}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold shadow-md transition w-fit
-              ${
-                role
-                  ? "bg-blue-500 hover:bg-blue-600 text-white cursor-pointer"
-                  : "bg-gray-300 text-gray-500 cursor-not-allowed"
-              }`}
-          >
-            <LogOut size={18} /> Logout
-          </button>
-        </div>
-      )}
     </header>
   );
 };

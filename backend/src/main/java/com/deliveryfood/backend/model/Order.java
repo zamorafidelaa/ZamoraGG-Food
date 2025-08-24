@@ -32,7 +32,7 @@ public class Order {
     private Status status;
 
     private Double totalPrice;
-    private Integer deliveryFee;
+    private Double deliveryFee;
     private Instant createdAt = Instant.now();
 
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL)

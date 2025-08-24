@@ -13,6 +13,9 @@ import AdminRestaurants from "./pages/AdminRestaurants";
 import AdminMenus from "./pages/AdminMenus";
 import UnassignedOrders from "./pages/UnassignedOrders";
 import About from "./pages/About";
+import Menu from "./pages/Menu";
+import { CartProvider } from "./components/CartContext";
+import Cart from "./pages/Cart";
 
 const router = createBrowserRouter([
   {
@@ -23,6 +26,9 @@ const router = createBrowserRouter([
       { path: "/about", element: <About /> },
       { path: "/login", element: <Login /> },
       { path: "/register", element: <Register /> },
+      { path: "/menu", element: <Menu /> },
+            { path: "/cart", element: <Cart /> },
+
     ],
   },
   {
@@ -39,5 +45,9 @@ const router = createBrowserRouter([
 ]);
 
 ReactDOM.createRoot(document.getElementById("root")).render(
-  <RouterProvider router={router} />
+  <React.StrictMode>
+    <CartProvider>  
+      <RouterProvider router={router} />
+    </CartProvider>
+  </React.StrictMode>
 );
