@@ -1,14 +1,12 @@
-// src/pages/Menu.jsx
-import React, { useEffect, useState, useContext } from "react";
-import { CartContext } from "../components/CartContext";
-import { motion } from "framer-motion";
-import { MapPin, Phone, Utensils } from "lucide-react";
+import React, { useEffect, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { MapPin, Phone, Utensils, X } from "lucide-react";
 
 // Helper untuk generate URL gambar menu
 const getMenuImageUrl = (imageUrl) => {
-  if (!imageUrl) return "/food-placeholder.jpg"; // fallback placeholder
-  if (imageUrl.startsWith("http")) return imageUrl; // URL sudah lengkap
-  return `http://localhost:8080${imageUrl}`; // tambahkan base URL server
+  if (!imageUrl) return "/food-placeholder.jpg";
+  if (imageUrl.startsWith("http")) return imageUrl;
+  return `http://localhost:8080${imageUrl}`;
 };
 
 const Menu = () => {
@@ -19,8 +17,12 @@ const Menu = () => {
   const [restoSearch, setRestoSearch] = useState("");
   const [sortOption, setSortOption] = useState("");
   const [menuSortOption, setMenuSortOption] = useState("");
-  const { addToCart } = useContext(CartContext);
+  const [selectedMenu, setSelectedMenu] = useState(null); // ✅ popup
+  const [message, setMessage] = useState("");
 
+  const userId = localStorage.getItem("userId");
+
+  // Ambil data dari backend
   useEffect(() => {
     fetch("http://localhost:8080/restaurants")
       .then((res) => res.json())
@@ -48,7 +50,7 @@ const Menu = () => {
     return 0;
   });
 
-  // Filter menu berdasarkan restoran & search otomatis
+  // Filter menu per restoran
   let restoMenus = selectedResto
     ? menus.filter(
         (menu) =>
@@ -66,14 +68,48 @@ const Menu = () => {
     return 0;
   });
 
+  // ✅ Tambah ke cart backend
+  const addToCart = async (menu) => {
+    if (!userId) {
+      setMessage("⚠️ You must login first!");
+      return;
+    }
+
+    try {
+      const res = await fetch("http://localhost:8080/cart", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          user: { id: parseInt(userId, 10) },
+          menu: { id: menu.id },
+          quantity: 1,
+        }),
+      });
+
+      if (res.ok) {
+        setMessage(`✅ ${menu.name} added to cart`);
+        window.dispatchEvent(new Event("cartUpdated"));
+      } else {
+        setMessage("❌ Failed to add to cart");
+      }
+    } catch (err) {
+      console.error("Add to cart error:", err);
+      setMessage("❌ Server error");
+    }
+  };
+
   return (
     <div className="p-6 max-w-7xl mx-auto min-h-screen pb-24">
-      {/* Hanya tampilkan judul Explore Restaurants jika belum memilih resto */}
       {!selectedResto && (
         <h1 className="text-3xl md:text-4xl font-extrabold text-center mb-8 flex items-center justify-center gap-3 bg-clip-text text-transparent bg-gradient-to-r from-blue-500 to-purple-600">
           <Utensils size={32} className="text-blue-500" />
           Explore Restaurants
         </h1>
+      )}
+
+      {/* Pesan singkat */}
+      {message && (
+        <p className="text-center text-sm text-green-600 mb-4">{message}</p>
       )}
 
       {!selectedResto ? (
@@ -129,7 +165,8 @@ const Menu = () => {
                     )}
                     {resto.phone && (
                       <p className="flex items-center gap-2 text-gray-600 text-sm">
-                        <Phone size={16} className="text-green-500" /> {resto.phone}
+                        <Phone size={16} className="text-green-500" />{" "}
+                        {resto.phone}
                       </p>
                     )}
                     <button className="mt-4 w-full bg-gradient-to-r from-blue-400 to-blue-500 hover:from-blue-500 hover:to-blue-600 text-white py-2 rounded-xl font-semibold transition-all duration-300 cursor-pointer">
@@ -154,9 +191,9 @@ const Menu = () => {
           </button>
 
           {/* Menu Title */}
-<h2 className="text-3xl md:text-3xl font-extrabold mb-6 text-center flex items-center justify-center gap-3 bg-clip-text text-transparent bg-gradient-to-r from-blue-600 via-purple-500 to-pink-500 leading-snug">
-  {selectedResto.name}'s Menu 🍽️
-</h2>
+          <h2 className="text-3xl md:text-3xl font-extrabold mb-6 text-center flex items-center justify-center gap-3 bg-clip-text text-transparent bg-gradient-to-r from-blue-600 via-purple-500 to-pink-500 leading-snug">
+            {selectedResto.name}'s Menu 🍽️
+          </h2>
 
           {/* Search + Sort menu */}
           <div className="flex flex-col sm:flex-row items-center gap-3 mb-8 justify-center">
@@ -194,15 +231,16 @@ const Menu = () => {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: index * 0.1, duration: 0.4 }}
                   whileHover={{ scale: 1.03 }}
-                  className="bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-shadow duration-300 border border-gray-200"
+                  className="bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-shadow duration-300 border border-gray-200 cursor-pointer"
+                  onClick={() => setSelectedMenu(menu)} // ✅ buka modal
                 >
-                    <div className="relative w-full h-44 sm:h-52 md:h-56 overflow-hidden rounded-t-2xl">
-                      <img
-                        src={getMenuImageUrl(menu.imageUrl)}
-                        alt={menu.name}
-                        className="w-full h-full object-cover object-center transition-transform duration-500 hover:scale-105"
-                      />
-                    </div>
+                  <div className="relative w-full h-44 sm:h-52 md:h-56 overflow-hidden rounded-t-2xl">
+                    <img
+                      src={getMenuImageUrl(menu.imageUrl)}
+                      alt={menu.name}
+                      className="w-full h-full object-cover object-center transition-transform duration-500 hover:scale-105"
+                    />
+                  </div>
                   <div className="p-5">
                     <h3 className="text-lg font-semibold mb-2 text-gray-900">
                       {menu.name}
@@ -210,13 +248,6 @@ const Menu = () => {
                     <p className="text-blue-600 font-semibold text-sm mb-3 px-3 py-1 bg-blue-100 rounded-full inline-block shadow-sm">
                       Rp {menu.price.toLocaleString("id-ID")}
                     </p>
-                    <motion.button
-                      whileTap={{ scale: 0.95 }}
-                      onClick={() => addToCart(menu)}
-                      className="w-full bg-gradient-to-r from-blue-500 to-blue-600 text-white py-2 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer"
-                    >
-                      Add to Cart
-                    </motion.button>
                   </div>
                 </motion.div>
               ))}
@@ -224,6 +255,67 @@ const Menu = () => {
           )}
         </div>
       )}
+
+      {/* ✅ Popup Menu Detail */}
+      <AnimatePresence>
+        {selectedMenu && (
+          <motion.div
+            className="fixed inset-0 bg-black/60 flex items-center justify-center z-50"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            <motion.div
+              className="bg-white rounded-2xl shadow-xl max-w-lg w-full p-6 relative"
+              initial={{ y: 50, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: 50, opacity: 0 }}
+            >
+              {/* Tombol close */}
+              <button
+                className="absolute top-4 right-4 text-gray-500 hover:text-red-500"
+                onClick={() => setSelectedMenu(null)}
+              >
+                <X size={24} />
+              </button>
+
+              {/* Gambar */}
+              <div className="w-full flex items-center justify-center bg-white rounded-xl mb-4">
+                <img
+                  src={getMenuImageUrl(selectedMenu.imageUrl)}
+                  alt={selectedMenu.name}
+                  className="max-h-[300px] object-contain"
+                />
+              </div>
+
+              {/* Nama & Harga */}
+              <h3 className="text-2xl font-bold text-gray-900 mb-2">
+                {selectedMenu.name}
+              </h3>
+              <p className="text-blue-600 font-semibold text-lg mb-4">
+                Rp {selectedMenu.price.toLocaleString("id-ID")}
+              </p>
+
+              {/* Deskripsi */}
+              <p className="text-gray-600 mb-6">
+                {selectedMenu.description || "No description available"}
+              </p>
+
+              {/* Add to Cart */}
+              <motion.button
+                whileTap={{ scale: 0.95 }}
+                onClick={() => {
+                  addToCart(selectedMenu);
+                  setSelectedMenu(null); // tutup modal
+                }}
+                className="w-full bg-gradient-to-r from-blue-500 to-blue-600 text-white py-3 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300"
+              >
+                Add to Cart
+              </motion.button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

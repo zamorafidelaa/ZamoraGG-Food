@@ -165,7 +165,7 @@ public Map<String, Object> updateOrderStatus(
     }
 
     Order order = orderOpt.get();
-    User courier = courierOpt.get();
+    // User courier = courierOpt.get();
 
     // Pastikan order ini memang ditugaskan ke kurir ini
     List<CourierAssignment> assignments = courierAssignmentRepository.findByOrder(order);

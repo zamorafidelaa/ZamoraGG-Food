@@ -14,11 +14,11 @@ import AdminMenus from "./pages/AdminMenus";
 import UnassignedOrders from "./pages/UnassignedOrders";
 import About from "./pages/About";
 import Menu from "./pages/Menu";
-import { CartProvider } from "./components/CartContext";
 import Cart from "./pages/Cart";
 import CourierDashboard from "./pages/CourierDashboard";
 import CustomerOrders from "./pages/CustomerOrders";
 import AdminReports from "./pages/AdminReports";
+
 
 const router = createBrowserRouter([
   {
@@ -36,7 +36,7 @@ const router = createBrowserRouter([
   },
   {
     path: "/admin",
-    element: <AdminLayout />, // Layout khusus admin
+    element: <AdminLayout />, 
     children: [
       { path: "dashboard", element: <AdminDashboard /> },
       { path: "couriers", element: <AdminCouriers /> },
@@ -47,15 +47,13 @@ const router = createBrowserRouter([
     ],
   },
   {
-    path: "/courier", // Layout atau halaman khusus kurir
-    element: <CourierDashboard />, // bisa juga pakai CourierLayout
+    path: "/courier", 
+    element: <CourierDashboard />,
   },
 ]);
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
-    <CartProvider>
       <RouterProvider router={router} />
-    </CartProvider>
   </React.StrictMode>
 );
