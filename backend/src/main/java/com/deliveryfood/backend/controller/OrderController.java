@@ -1,6 +1,7 @@
 package com.deliveryfood.backend.controller;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -61,8 +62,15 @@ public class OrderController {
                         item.setMenu(menu);
                         item.setOrder(savedOrder);
 
-                        // hitung subtotal
-                        subtotal += menu.getPrice() * item.getQuantity();
+                        // ✅ Set harga per unit dari menu
+                        item.setPrice(menu.getPrice());
+
+                        // ✅ Hitung total per item (price × qty)
+                        double totalItem = menu.getPrice() * item.getQuantity();
+                        item.setTotalPriceItem(totalItem);
+
+                        // ✅ Tambah ke subtotal
+                        subtotal += totalItem;
 
                         // kumpulin restoId
                         if (menu.getRestaurant() != null) {
@@ -163,4 +171,93 @@ public class OrderController {
         }
         return response;
     }
+
+    @GetMapping("/customer/{customerId}/history")
+public Map<String, Object> getCustomerOrderHistory(@PathVariable Long customerId) {
+    Map<String, Object> response = new LinkedHashMap<>();
+
+    Optional<User> customerOpt = userRepository.findById(customerId);
+    if (customerOpt.isEmpty() || customerOpt.get().getRole() != User.Role.CUSTOMER) {
+        response.put("message", "Customer not found");
+        response.put("data", null);
+        return response;
+    }
+
+    List<Order> orders = orderRepository.findByCustomerId(customerId); // pastikan repository ada
+    // urutkan dari terbaru
+    orders.sort((o1, o2) -> o2.getCreatedAt().compareTo(o1.getCreatedAt()));
+
+    response.put("message", "Order history retrieved successfully");
+    response.put("data", orders);
+    return response;
+}
+
+@GetMapping("/reports")
+public Map<String, Object> getRevenueReport(@RequestParam(defaultValue = "daily") String type) {
+    Map<String, Object> response = new LinkedHashMap<>();
+
+    List<Order> allOrders = orderRepository.findAll();
+    Map<String, Double> report = new LinkedHashMap<>();
+
+    System.out.println("Total orders found: " + allOrders.size());
+    for (Order o : allOrders) {
+        System.out.println("Order ID: " + o.getId() +
+                ", createdAt=" + o.getCreatedAt() +
+                ", totalPrice=" + o.getTotalPrice());
+    }
+
+    switch (type.toLowerCase()) {
+        case "daily":
+            report = allOrders.stream()
+                    .collect(Collectors.groupingBy(
+                            o -> o.getCreatedAt()
+                                    .atZone(java.time.ZoneId.systemDefault())
+                                    .toLocalDate()
+                                    .toString(),
+                            TreeMap::new,
+                            Collectors.summingDouble(Order::getTotalPrice)
+                    ));
+            response.put("type", "daily");
+            break;
+
+        case "monthly":
+            report = allOrders.stream()
+                    .collect(Collectors.groupingBy(
+                            o -> {
+                                var date = o.getCreatedAt()
+                                        .atZone(java.time.ZoneId.systemDefault())
+                                        .toLocalDate();
+                                return date.getYear() + "-" + String.format("%02d", date.getMonthValue());
+                            },
+                            TreeMap::new,
+                            Collectors.summingDouble(Order::getTotalPrice)
+                    ));
+            response.put("type", "monthly");
+            break;
+
+        case "yearly":
+            report = allOrders.stream()
+                    .collect(Collectors.groupingBy(
+                            o -> String.valueOf(
+                                    o.getCreatedAt().atZone(java.time.ZoneId.systemDefault()).getYear()
+                            ),
+                            TreeMap::new,
+                            Collectors.summingDouble(Order::getTotalPrice)
+                    ));
+            response.put("type", "yearly");
+            break;
+
+        default:
+            response.put("error", "Invalid type. Use: daily, monthly, or yearly");
+            return response;
+    }
+
+    response.put("orders_count", allOrders.size());
+    response.put("report", report);
+    response.put("message", "Revenue report (" + type + ") generated successfully");
+
+    return response;
+}
+
+
 }

@@ -1,7 +1,15 @@
+// src/pages/Menu.jsx
 import React, { useEffect, useState, useContext } from "react";
 import { CartContext } from "../components/CartContext";
 import { motion } from "framer-motion";
 import { MapPin, Phone, Utensils } from "lucide-react";
+
+// Helper untuk generate URL gambar menu
+const getMenuImageUrl = (imageUrl) => {
+  if (!imageUrl) return "/food-placeholder.jpg"; // fallback placeholder
+  if (imageUrl.startsWith("http")) return imageUrl; // URL sudah lengkap
+  return `http://localhost:8080${imageUrl}`; // tambahkan base URL server
+};
 
 const Menu = () => {
   const [restaurants, setRestaurants] = useState([]);
@@ -25,7 +33,7 @@ const Menu = () => {
       .catch((err) => console.error(err));
   }, []);
 
-  // ✅ Filter + Sort restaurants
+  // Filter + Sort restaurants
   const filteredRestaurants = restaurants.filter((resto) =>
     resto.name.toLowerCase().includes(restoSearch.toLowerCase())
   );
@@ -40,7 +48,7 @@ const Menu = () => {
     return 0;
   });
 
-  // ✅ Filter menu berdasarkan restoran & search otomatis
+  // Filter menu berdasarkan restoran & search otomatis
   let restoMenus = selectedResto
     ? menus.filter(
         (menu) =>
@@ -49,7 +57,7 @@ const Menu = () => {
       )
     : [];
 
-  // ✅ Sorting menu
+  // Sorting menu
   restoMenus = [...restoMenus].sort((a, b) => {
     if (menuSortOption === "name-asc") return a.name.localeCompare(b.name);
     if (menuSortOption === "name-desc") return b.name.localeCompare(a.name);
@@ -60,14 +68,17 @@ const Menu = () => {
 
   return (
     <div className="p-6 max-w-7xl mx-auto min-h-screen pb-24">
-      <h1 className="text-3xl md:text-4xl font-extrabold text-center mb-8 flex items-center justify-center gap-3 bg-clip-text text-transparent bg-gradient-to-r from-blue-500 to-purple-600">
-        <Utensils size={32} className="text-blue-500" />
-        Explore Restaurants
-      </h1>
+      {/* Hanya tampilkan judul Explore Restaurants jika belum memilih resto */}
+      {!selectedResto && (
+        <h1 className="text-3xl md:text-4xl font-extrabold text-center mb-8 flex items-center justify-center gap-3 bg-clip-text text-transparent bg-gradient-to-r from-blue-500 to-purple-600">
+          <Utensils size={32} className="text-blue-500" />
+          Explore Restaurants
+        </h1>
+      )}
 
       {!selectedResto ? (
         <div>
-          {/* 🔍 Search & Sort */}
+          {/* Search & Sort */}
           <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mb-6">
             <input
               type="text"
@@ -89,7 +100,7 @@ const Menu = () => {
             </select>
           </div>
 
-          {/* ✅ Restaurant Grid */}
+          {/* Restaurant Grid */}
           {sortedRestaurants.length === 0 ? (
             <p className="text-center text-gray-400 text-lg">
               No restaurants found
@@ -103,7 +114,7 @@ const Menu = () => {
                   className="relative bg-white rounded-2xl overflow-hidden shadow-md cursor-pointer transition-all duration-300 border border-gray-200 hover:shadow-xl"
                   onClick={() => {
                     setSelectedResto(resto);
-                    setSearchKeyword(""); // reset search menu
+                    setSearchKeyword("");
                   }}
                 >
                   <div className="p-6">
@@ -118,8 +129,7 @@ const Menu = () => {
                     )}
                     {resto.phone && (
                       <p className="flex items-center gap-2 text-gray-600 text-sm">
-                        <Phone size={16} className="text-green-500" />{" "}
-                        {resto.phone}
+                        <Phone size={16} className="text-green-500" /> {resto.phone}
                       </p>
                     )}
                     <button className="mt-4 w-full bg-gradient-to-r from-blue-400 to-blue-500 hover:from-blue-500 hover:to-blue-600 text-white py-2 rounded-xl font-semibold transition-all duration-300 cursor-pointer">
@@ -143,12 +153,12 @@ const Menu = () => {
             ← Back to Restaurants
           </button>
 
-          {/* Modern Title */}
-          <h2 className="text-4xl font-extrabold mb-8 text-center flex items-center justify-center gap-3 bg-clip-text text-transparent bg-gradient-to-r from-blue-600 via-purple-500 to-pink-500">
-            {selectedResto.name}'s Menu 🍽️
-          </h2>
+          {/* Menu Title */}
+<h2 className="text-3xl md:text-3xl font-extrabold mb-6 text-center flex items-center justify-center gap-3 bg-clip-text text-transparent bg-gradient-to-r from-blue-600 via-purple-500 to-pink-500 leading-snug">
+  {selectedResto.name}'s Menu 🍽️
+</h2>
 
-          {/* 🔍 Search + Sort menu */}
+          {/* Search + Sort menu */}
           <div className="flex flex-col sm:flex-row items-center gap-3 mb-8 justify-center">
             <input
               type="text"
@@ -170,7 +180,7 @@ const Menu = () => {
             </select>
           </div>
 
-          {/* ✅ Menu grid */}
+          {/* Menu Grid */}
           {restoMenus.length === 0 ? (
             <p className="text-center text-gray-400 text-lg">
               No menu found for this restaurant
@@ -183,16 +193,16 @@ const Menu = () => {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: index * 0.1, duration: 0.4 }}
-                  whileHover={{ scale: 1.05 }}
+                  whileHover={{ scale: 1.03 }}
                   className="bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-shadow duration-300 border border-gray-200"
                 >
-                  <div className="overflow-hidden">
-                    <img
-                      src={menu.imageUrl || "/food-placeholder.jpg"}
-                      alt={menu.name}
-                      className="w-full h-44 object-cover hover:scale-110 transition-transform duration-500"
-                    />
-                  </div>
+                    <div className="relative w-full h-44 sm:h-52 md:h-56 overflow-hidden rounded-t-2xl">
+                      <img
+                        src={getMenuImageUrl(menu.imageUrl)}
+                        alt={menu.name}
+                        className="w-full h-full object-cover object-center transition-transform duration-500 hover:scale-105"
+                      />
+                    </div>
                   <div className="p-5">
                     <h3 className="text-lg font-semibold mb-2 text-gray-900">
                       {menu.name}

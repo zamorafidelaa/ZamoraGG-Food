@@ -16,6 +16,9 @@ import About from "./pages/About";
 import Menu from "./pages/Menu";
 import { CartProvider } from "./components/CartContext";
 import Cart from "./pages/Cart";
+import CourierDashboard from "./pages/CourierDashboard";
+import CustomerOrders from "./pages/CustomerOrders";
+import AdminReports from "./pages/AdminReports";
 
 const router = createBrowserRouter([
   {
@@ -27,8 +30,8 @@ const router = createBrowserRouter([
       { path: "/login", element: <Login /> },
       { path: "/register", element: <Register /> },
       { path: "/menu", element: <Menu /> },
-            { path: "/cart", element: <Cart /> },
-
+      { path: "/cart", element: <Cart /> },
+      { path: "/orders", element: <CustomerOrders /> },
     ],
   },
   {
@@ -40,13 +43,18 @@ const router = createBrowserRouter([
       { path: "restaurants", element: <AdminRestaurants /> },
       { path: "menus", element: <AdminMenus /> },
       { path: "unassigned", element: <UnassignedOrders /> },
+      { path: "reports", element: <AdminReports /> },
     ],
+  },
+  {
+    path: "/courier", // Layout atau halaman khusus kurir
+    element: <CourierDashboard />, // bisa juga pakai CourierLayout
   },
 ]);
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
-    <CartProvider>  
+    <CartProvider>
       <RouterProvider router={router} />
     </CartProvider>
   </React.StrictMode>

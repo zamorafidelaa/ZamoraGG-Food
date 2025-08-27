@@ -77,7 +77,6 @@ const AdminCouriers = () => {
 
       const data = await res.json();
       setMessage(data.message || "Action completed");
-
       setTimeout(() => setMessage(""), 3000);
 
       closeModal();
@@ -104,77 +103,89 @@ const AdminCouriers = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 p-6">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-blue-900">Manage Couriers</h1>
+    <div className="min-h-screen p-6 bg-gray-50">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+        <h1 className="text-3xl font-bold text-blue-800">
+          Couriers Management
+        </h1>
         <button
           onClick={() => openModal()}
-          className="bg-blue-800 text-white px-4 py-2 rounded-lg shadow hover:bg-blue-900"
+          className="bg-blue-500 text-white px-5 py-2 rounded-lg shadow-md hover:bg-blue-600 transition duration-300"
         >
           + Add Courier
         </button>
       </div>
 
       {message && (
-        <p className="mb-4 text-center text-green-600 font-semibold">
+        <motion.p
+          className="mb-4 text-center text-green-600 font-semibold"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+        >
           {message}
-        </p>
+        </motion.p>
       )}
 
-      <table className="w-full bg-white shadow rounded-lg overflow-hidden">
-        <thead className="bg-blue-800 text-white">
-          <tr>
-            <th className="p-2">ID</th>
-            <th className="p-2">Name</th>
-            <th className="p-2">Email</th>
-            <th className="p-2 text-center">Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {couriers.map((c) => (
-            <tr key={c.id} className="border-b">
-              <td className="p-2">{c.id}</td>
-              <td className="p-2">{c.name}</td>
-              <td className="p-2">{c.email}</td>
-              <td className="p-2 flex gap-2 justify-center">
-                <button
-                  onClick={() => openModal(c)}
-                  className="bg-yellow-500 text-white p-2 rounded hover:bg-yellow-600 flex items-center"
-                  title="Edit Courier"
-                >
-                  <Edit className="w-4 h-4" />
-                </button>
-                <button
-                  onClick={() => handleDelete(c.id)}
-                  className="bg-red-600 text-white p-2 rounded hover:bg-red-700 flex items-center"
-                  title="Delete Courier"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
-              </td>
+      <div className="overflow-x-auto rounded-lg shadow-md bg-white">
+        <table className="w-full table-auto">
+          <thead className="bg-blue-200 text-blue-900">
+            <tr>
+              <th className="p-3 text-left">ID</th>
+              <th className="p-3 text-left">Name</th>
+              <th className="p-3 text-left">Email</th>
+              <th className="p-3 text-center">Actions</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {couriers.map((c) => (
+              <tr
+                key={c.id}
+                className="border-b hover:bg-blue-50 transition-colors"
+              >
+                <td className="p-3">{c.id}</td>
+                <td className="p-3">{c.name}</td>
+                <td className="p-3">{c.email}</td>
+                <td className="p-3 flex justify-center gap-2">
+                  <button
+                    onClick={() => openModal(c)}
+                    className="bg-yellow-400 hover:bg-yellow-500 text-white p-2 rounded flex items-center transition"
+                    title="Edit Courier"
+                  >
+                    <Edit className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => handleDelete(c.id)}
+                    className="bg-red-500 hover:bg-red-600 text-white p-2 rounded flex items-center transition"
+                    title="Delete Courier"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
 
-      {/* Modal Popup */}
+      {/* Modal */}
       <AnimatePresence>
         {isModalOpen && (
           <motion.div
-            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+            className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
           >
             <motion.div
-              className="bg-white rounded-2xl shadow-lg p-6 w-full max-w-md"
+              className="bg-white rounded-2xl shadow-xl p-6 w-full max-w-md"
               initial={{ scale: 0.8, opacity: 0, y: 50 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.8, opacity: 0, y: 50 }}
               transition={{ duration: 0.3 }}
             >
               <h2 className="text-xl font-bold mb-4 text-blue-800">
-                {editId ? "Edit Courier" : "Add Courier"}
+                {editId ? "Edit Courier" : "Add New Courier"}
               </h2>
               <form onSubmit={handleSubmit} className="flex flex-col gap-3">
                 <input
@@ -182,7 +193,7 @@ const AdminCouriers = () => {
                   placeholder="Name"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  className="border p-2 rounded"
+                  className="border border-gray-300 p-2 rounded focus:ring-2 focus:ring-blue-300 focus:outline-none"
                   required
                 />
                 <input
@@ -190,7 +201,7 @@ const AdminCouriers = () => {
                   placeholder="Email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="border p-2 rounded"
+                  className="border border-gray-300 p-2 rounded focus:ring-2 focus:ring-blue-300 focus:outline-none"
                   required
                 />
                 {!editId && (
@@ -199,7 +210,7 @@ const AdminCouriers = () => {
                     placeholder="Password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="border p-2 rounded"
+                    className="border border-gray-300 p-2 rounded focus:ring-2 focus:ring-blue-300 focus:outline-none"
                     required
                   />
                 )}
@@ -207,13 +218,13 @@ const AdminCouriers = () => {
                   <button
                     type="button"
                     onClick={closeModal}
-                    className="px-4 py-2 rounded bg-gray-300 hover:bg-gray-400"
+                    className="px-4 py-2 rounded bg-gray-200 hover:bg-gray-300 transition"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
-                    className="px-4 py-2 rounded bg-blue-800 text-white hover:bg-blue-900"
+                    className="px-4 py-2 rounded bg-blue-500 text-white hover:bg-blue-600 transition"
                   >
                     {editId ? "Update" : "Add"}
                   </button>

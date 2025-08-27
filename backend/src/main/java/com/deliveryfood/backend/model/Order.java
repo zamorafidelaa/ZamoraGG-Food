@@ -3,6 +3,8 @@ package com.deliveryfood.backend.model;
 import java.time.Instant;
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -45,4 +47,10 @@ public class Order {
         ON_DELIVERY,
         DELIVERED
     }
+
+    @JsonProperty("customerName")
+    public String getCustomerName() {
+        return customer != null ? customer.getName() : null;
+    }
+
 }

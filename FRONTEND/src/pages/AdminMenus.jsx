@@ -18,12 +18,13 @@ const AdminMenus = () => {
   const [price, setPrice] = useState("");
   const [description, setDescription] = useState("");
   const [restaurantId, setRestaurantId] = useState("");
+  const [imageFile, setImageFile] = useState(null);
+  const [imagePreview, setImagePreview] = useState(null);
   const [editId, setEditId] = useState(null);
 
   const [message, setMessage] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  // fetch menus & restaurants
   useEffect(() => {
     fetchMenus();
     fetchRestaurants();
@@ -56,12 +57,16 @@ const AdminMenus = () => {
       setDescription(menu.description);
       setRestaurantId(menu.restaurant?.id || "");
       setEditId(menu.id);
+      setImagePreview(menu.imageUrl ? `http://localhost:8080${menu.imageUrl}` : null);
+      setImageFile(null);
     } else {
       setName("");
       setPrice("");
       setDescription("");
       setRestaurantId("");
       setEditId(null);
+      setImageFile(null);
+      setImagePreview(null);
     }
     setIsModalOpen(true);
   };
@@ -73,11 +78,32 @@ const AdminMenus = () => {
     setDescription("");
     setRestaurantId("");
     setEditId(null);
+    setImageFile(null);
+    setImagePreview(null);
+  };
+
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setImageFile(file);
+      setImagePreview(URL.createObjectURL(file));
+    }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
+      // buat FormData
+      const formData = new FormData();
+      formData.append(
+        "menu",
+        new Blob(
+          [JSON.stringify({ name, price, description, restaurant: { id: restaurantId } })],
+          { type: "application/json" }
+        )
+      );
+      if (imageFile) formData.append("image", imageFile);
+
       let url = `${API_BASE}/create`;
       let method = "POST";
 
@@ -86,20 +112,9 @@ const AdminMenus = () => {
         method = "PUT";
       }
 
-      const payload = {
-        name,
-        price: parseFloat(price),
-        description,
-        restaurant: { id: parseInt(restaurantId) },
-      };
-
-      const res = await fetch(url, {
-        method,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-
+      const res = await fetch(url, { method, body: formData });
       if (!res.ok) throw new Error("Request failed");
+
       await fetchMenus();
       closeModal();
       setMessage(editId ? "Menu updated!" : "Menu added!");
@@ -129,32 +144,26 @@ const AdminMenus = () => {
       let valB = b[sortBy];
       if (typeof valA === "string") valA = valA.toLowerCase();
       if (typeof valB === "string") valB = valB.toLowerCase();
-      if (order === "asc") return valA > valB ? 1 : -1;
-      return valA < valB ? 1 : -1;
+      return order === "asc" ? (valA > valB ? 1 : -1) : valA < valB ? 1 : -1;
     });
 
   return (
-    <div className="min-h-screen bg-gray-100 p-6">
-      {/* Header */}
+    <div className="min-h-screen bg-gray-50 p-6">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-blue-900">Manage Menus</h1>
+        <h1 className="text-3xl font-bold text-blue-800">Manage Menus</h1>
         <button
           onClick={() => openModal()}
-          className="flex items-center gap-2 bg-blue-800 text-white px-4 py-2 rounded-lg shadow hover:bg-blue-900"
+          className="flex items-center gap-2 bg-blue-500 text-white px-5 py-2 rounded-lg shadow hover:bg-blue-600"
         >
           <Plus size={18} /> Add Menu
         </button>
       </div>
 
-      {/* Message */}
-      {message && (
-        <p className="mb-4 text-center text-green-600 font-semibold">{message}</p>
-      )}
+      {message && <p className="mb-4 text-center text-green-600 font-semibold">{message}</p>}
 
-      {/* Search & Sort Controls */}
       <div className="flex flex-col sm:flex-row gap-4 mb-4">
-        <div className="flex items-center border rounded-lg px-3 py-2 w-full sm:w-1/2">
-          <Search size={18} className="text-gray-500 mr-2" />
+        <div className="flex items-center border rounded-lg px-3 py-2 w-full sm:w-1/2 bg-white shadow-sm">
+          <Search size={18} className="text-gray-400 mr-2" />
           <input
             type="text"
             placeholder="Search menus..."
@@ -165,58 +174,47 @@ const AdminMenus = () => {
         </div>
 
         <div className="flex gap-2">
-          <select
-            value={sortBy}
-            onChange={(e) => setSortBy(e.target.value)}
-            className="border rounded-lg px-3 py-2"
-          >
+          <select value={sortBy} onChange={(e) => setSortBy(e.target.value)} className="border rounded-lg px-3 py-2 bg-white shadow-sm">
             <option value="id">Sort by ID</option>
             <option value="name">Sort by Name</option>
             <option value="price">Sort by Price</option>
           </select>
-          <select
-            value={order}
-            onChange={(e) => setOrder(e.target.value)}
-            className="border rounded-lg px-3 py-2"
-          >
+          <select value={order} onChange={(e) => setOrder(e.target.value)} className="border rounded-lg px-3 py-2 bg-white shadow-sm">
             <option value="asc">Ascending</option>
             <option value="desc">Descending</option>
           </select>
         </div>
       </div>
 
-      {/* Table */}
-      <div className="overflow-x-auto">
-        <table className="w-full bg-white shadow rounded-lg overflow-hidden">
-          <thead className="bg-blue-800 text-white">
+      <div className="overflow-x-auto rounded-lg shadow-md bg-white">
+        <table className="w-full table-auto">
+          <thead className="bg-blue-100 text-blue-900">
             <tr>
-              <th className="px-4 py-2 border">ID</th>
-              <th className="px-4 py-2 border">Name</th>
-              <th className="px-4 py-2 border">Price</th>
-              <th className="px-4 py-2 border">Description</th>
-              <th className="px-4 py-2 border">Restaurant</th>
-              <th className="px-4 py-2 border">Actions</th>
+              <th className="px-4 py-2 text-left">ID</th>
+              <th className="px-4 py-2 text-left">Image</th>
+              <th className="px-4 py-2 text-left">Name</th>
+              <th className="px-4 py-2 text-left">Price</th>
+              <th className="px-4 py-2 text-left">Description</th>
+              <th className="px-4 py-2 text-left">Restaurant</th>
+              <th className="px-4 py-2 text-center">Actions</th>
             </tr>
           </thead>
           <tbody>
             {filtered.map((m) => (
-              <tr key={m.id} className="text-center border-b">
+              <tr key={m.id} className="border-b hover:bg-blue-50 transition-colors">
                 <td className="px-4 py-2">{m.id}</td>
+                <td className="px-4 py-2">
+                  {m.imageUrl ? <img src={`http://localhost:8080${m.imageUrl}`} alt="Menu" className="w-16 h-16 object-cover mx-auto rounded" /> : "-"}
+                </td>
                 <td className="px-4 py-2">{m.name}</td>
                 <td className="px-4 py-2">Rp {m.price}</td>
                 <td className="px-4 py-2">{m.description}</td>
                 <td className="px-4 py-2">{m.restaurant?.name}</td>
                 <td className="px-4 py-2 flex justify-center gap-2">
-                  <button
-                    onClick={() => openModal(m)}
-                    className="p-2 bg-yellow-500 text-white rounded hover:bg-yellow-600"
-                  >
+                  <button onClick={() => openModal(m)} className="p-2 bg-yellow-400 hover:bg-yellow-500 text-white rounded">
                     <Edit size={16} />
                   </button>
-                  <button
-                    onClick={() => handleDelete(m.id)}
-                    className="p-2 bg-red-600 text-white rounded hover:bg-red-700"
-                  >
+                  <button onClick={() => handleDelete(m.id)} className="p-2 bg-red-500 hover:bg-red-600 text-white rounded">
                     <Trash2 size={16} />
                   </button>
                 </td>
@@ -224,7 +222,7 @@ const AdminMenus = () => {
             ))}
             {filtered.length === 0 && (
               <tr>
-                <td colSpan="6" className="text-center py-4 text-gray-500">
+                <td colSpan="7" className="text-center py-4 text-gray-500">
                   No menus found.
                 </td>
               </tr>
@@ -233,76 +231,25 @@ const AdminMenus = () => {
         </table>
       </div>
 
-      {/* Modal Popup */}
+      {/* Modal */}
       <AnimatePresence>
         {isModalOpen && (
-          <motion.div
-            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-          >
-            <motion.div
-              className="bg-white rounded-2xl shadow-lg p-6 w-full max-w-md"
-              initial={{ scale: 0.8, opacity: 0, y: 50 }}
-              animate={{ scale: 1, opacity: 1, y: 0 }}
-              exit={{ scale: 0.8, opacity: 0, y: 50 }}
-              transition={{ duration: 0.3 }}
-            >
-              <h2 className="text-xl font-bold mb-4 text-blue-800">
-                {editId ? "Edit Menu" : "Add Menu"}
-              </h2>
+          <motion.div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+            <motion.div className="bg-white rounded-2xl shadow-xl p-6 w-full max-w-md" initial={{ scale: 0.8, opacity: 0, y: 50 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.8, opacity: 0, y: 50 }} transition={{ duration: 0.3 }}>
+              <h2 className="text-xl font-bold mb-4 text-blue-800">{editId ? "Edit Menu" : "Add Menu"}</h2>
               <form onSubmit={handleSubmit} className="flex flex-col gap-3">
-                <input
-                  type="text"
-                  placeholder="Name"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  className="border p-2 rounded"
-                  required
-                />
-                <input
-                  type="number"
-                  placeholder="Price"
-                  value={price}
-                  onChange={(e) => setPrice(e.target.value)}
-                  className="border p-2 rounded"
-                  required
-                />
-                <textarea
-                  placeholder="Description"
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  className="border p-2 rounded"
-                  required
-                />
-                <select
-                  value={restaurantId}
-                  onChange={(e) => setRestaurantId(e.target.value)}
-                  className="border p-2 rounded"
-                  required
-                >
+                <input type="text" placeholder="Name" value={name} onChange={(e) => setName(e.target.value)} className="border p-2 rounded focus:ring-2 focus:ring-blue-300 focus:outline-none" required />
+                <input type="number" placeholder="Price" value={price} onChange={(e) => setPrice(e.target.value)} className="border p-2 rounded focus:ring-2 focus:ring-blue-300 focus:outline-none" required />
+                <textarea placeholder="Description" value={description} onChange={(e) => setDescription(e.target.value)} className="border p-2 rounded focus:ring-2 focus:ring-blue-300 focus:outline-none" required />
+                <select value={restaurantId} onChange={(e) => setRestaurantId(e.target.value)} className="border p-2 rounded focus:ring-2 focus:ring-blue-300 focus:outline-none" required>
                   <option value="">Select Restaurant</option>
-                  {restaurants.map((r) => (
-                    <option key={r.id} value={r.id}>
-                      {r.name}
-                    </option>
-                  ))}
+                  {restaurants.map((r) => (<option key={r.id} value={r.id}>{r.name}</option>))}
                 </select>
+                <input type="file" accept="image/*" onChange={handleFileChange} className="border p-2 rounded focus:ring-2 focus:ring-blue-300 focus:outline-none" />
+                {imagePreview && <img src={imagePreview} alt="Preview" className="w-32 h-32 object-cover mt-2 rounded mx-auto" />}
                 <div className="flex justify-end gap-2 mt-4">
-                  <button
-                    type="button"
-                    onClick={closeModal}
-                    className="px-4 py-2 rounded bg-gray-300 hover:bg-gray-400"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    className="px-4 py-2 rounded bg-blue-800 text-white hover:bg-blue-900"
-                  >
-                    {editId ? "Update" : "Add"}
-                  </button>
+                  <button type="button" onClick={closeModal} className="px-4 py-2 rounded bg-gray-200 hover:bg-gray-300">Cancel</button>
+                  <button type="submit" className="px-4 py-2 rounded bg-blue-500 text-white hover:bg-blue-600">{editId ? "Update" : "Add"}</button>
                 </div>
               </form>
             </motion.div>
