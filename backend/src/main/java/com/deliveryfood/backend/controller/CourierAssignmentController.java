@@ -82,23 +82,36 @@ public class CourierAssignmentController {
     }
 
     // === Get all unassigned orders ===
-    @GetMapping("/unassigned-orders")
-    public Map<String, Object> getUnassignedOrders() {
-        Map<String, Object> response = new LinkedHashMap<>();
-        List<Order> allOrders = orderRepository.findAll();
-        List<Order> unassigned = new ArrayList<>();
+@GetMapping("/unassigned-orders")
+public Map<String, Object> getUnassignedOrders() {
+    Map<String, Object> response = new LinkedHashMap<>();
+    List<Order> allOrders = orderRepository.findAll();
+    List<Map<String, Object>> unassigned = new ArrayList<>();
 
-        for (Order o : allOrders) {
-            List<CourierAssignment> assignments = courierAssignmentRepository.findByOrder(o);
-            if (assignments.isEmpty()) {
-                unassigned.add(o);
+    for (Order o : allOrders) {
+        List<CourierAssignment> assignments = courierAssignmentRepository.findByOrder(o);
+        if (assignments.isEmpty()) {
+            Map<String, Object> orderData = new HashMap<>();
+            orderData.put("order", o);
+
+            // join ke customer
+            User customer = o.getCustomer();
+            if (customer != null) {
+orderData.put("customerName", customer.getName());
+orderData.put("customerStreet", customer.getStreet());
+orderData.put("customerCity", customer.getCity());
+orderData.put("customerPostalCode", customer.getPostalCode());
+orderData.put("customerPhone", customer.getPhone());
             }
-        }
 
-        response.put("message", "Unassigned orders retrieved successfully");
-        response.put("data", unassigned);
-        return response;
+            unassigned.add(orderData);
+        }
     }
+
+    response.put("message", "Unassigned orders retrieved successfully");
+    response.put("data", unassigned);
+    return response;
+}
 
     // === Get all available couriers (no current assignment) ===
     @GetMapping("/available-couriers")
@@ -122,7 +135,6 @@ public class CourierAssignmentController {
         return response;
     }
 
-    // === Get orders assigned to a courier ===
 @GetMapping("/courier-orders/{courierId}")
 public Map<String, Object> getOrdersForCourier(@PathVariable Long courierId) {
     Map<String, Object> response = new LinkedHashMap<>();
@@ -135,9 +147,26 @@ public Map<String, Object> getOrdersForCourier(@PathVariable Long courierId) {
     }
 
     List<CourierAssignment> assignments = courierAssignmentRepository.findByCourier(courierOpt.get());
-    List<Order> orders = new ArrayList<>();
+    List<Map<String, Object>> orders = new ArrayList<>();
+
     for (CourierAssignment a : assignments) {
-        orders.add(a.getOrder());
+        Order o = a.getOrder();
+        Map<String, Object> orderData = new HashMap<>();
+        orderData.put("id", o.getId());
+        orderData.put("status", o.getStatus());
+        orderData.put("totalPrice", o.getTotalPrice());
+        orderData.put("createdAt", o.getCreatedAt());
+
+        User customer = o.getCustomer();
+        if (customer != null) {
+            orderData.put("customerName", customer.getName());
+            orderData.put("customerStreet", customer.getStreet());
+            orderData.put("customerCity", customer.getCity());
+            orderData.put("customerPostalCode", customer.getPostalCode());
+            orderData.put("customerPhone", customer.getPhone());
+        }
+
+        orders.add(orderData);
     }
 
     response.put("message", "Orders for courier retrieved");
@@ -227,5 +256,6 @@ public Map<String, Object> getCustomerOrders(@PathVariable Long customerId) {
     response.put("data", orders);
     return response;
 }
+
 
 }

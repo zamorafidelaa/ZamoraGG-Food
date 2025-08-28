@@ -30,10 +30,6 @@ public class Order {
     @JoinColumn(name = "customer_id", referencedColumnName = "id")
     private User customer;
 
-    @ManyToOne
-    @JoinColumn(name = "address_id")
-    private Address address;
-
     @Enumerated(EnumType.STRING)
     private Status status;
 

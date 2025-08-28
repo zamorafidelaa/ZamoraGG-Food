@@ -19,15 +19,19 @@ public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
     private String name;
     private String email;
     private String password;
+
     @Enumerated(EnumType.STRING)
     private Role role;
 
-    public enum Role {
-        ADMIN, COURIER, CUSTOMER
-    }
+    // Field alamat langsung di user
+    private String street;
+    private String city;
+    private String postalCode;
+    private String phone;
 
     @OneToMany(mappedBy = "courier")
     @JsonIgnore // supaya Jackson tidak looping saat serialisasi JSON
@@ -37,4 +41,7 @@ public class User {
         return assignments;
     }
 
+    public enum Role {
+        ADMIN, COURIER, CUSTOMER
+    }
 }

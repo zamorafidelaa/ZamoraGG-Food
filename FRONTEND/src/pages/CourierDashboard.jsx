@@ -22,11 +22,6 @@ const CourierDashboard = () => {
     localStorage.getItem("activeTab") || "Dashboard"
   );
 
-  const [profile, setProfile] = useState({
-    name: "Courier Name",
-    email: "courier@email.com",
-  });
-
   const courierId = localStorage.getItem("userId");
 
   const fetchOrders = async () => {
@@ -37,9 +32,6 @@ const CourierDashboard = () => {
       const data = await res.json();
       setOrders(data.data || []);
 
-      const profileRes = await fetch(`${API_BASE}/couriers/${courierId}`);
-      const profileData = await profileRes.json();
-      setProfile(profileData || profile);
     } catch (err) {
       console.error(err);
     }
@@ -118,10 +110,6 @@ const CourierDashboard = () => {
           {/* Profile */}
           <div className="flex items-center mb-6 space-x-3">
             <User className="w-10 h-10 text-blue-600" />
-            <div>
-              <p className="font-semibold">{profile.name}</p>
-              <p className="text-sm text-blue-700">{profile.email}</p>
-            </div>
           </div>
 
           {/* Navigation */}
@@ -207,8 +195,10 @@ const CourierDashboard = () => {
                   >
                     <div className="flex-1">
                       <p><span className="font-semibold">Order ID:</span> {order.id}</p>
-                      <p><span className="font-semibold">Customer:</span> {order.customerName}</p>
-                      <p><span className="font-semibold">Total:</span> Rp {order.totalPrice?.toLocaleString("id-ID")}</p>
+<p><span className="font-semibold">Customer:</span> {order.customerName}</p>
+<p><span className="font-semibold">Address:</span> {order.customerStreet}, {order.customerCity}, {order.customerPostalCode}</p>
+<p><span className="font-semibold">Phone:</span> {order.customerPhone}</p>
+<p><span className="font-semibold">Total:</span> Rp {order.totalPrice?.toLocaleString("id-ID")}</p>
                       <div className="w-full bg-gray-200 h-2 rounded-full mt-3">
                         <div className="h-2 bg-blue-500 rounded-full transition-all duration-500 ease-out" style={{ width: `${getProgressPercent(order.status)}%` }}></div>
                       </div>
@@ -244,9 +234,11 @@ const CourierDashboard = () => {
                   <motion.div key={order.id} className="p-4 rounded-xl bg-blue-50 border-l-4 border-blue-300 shadow-sm hover:shadow-md transition flex justify-between items-start md:items-center">
                     <div>
                       <p><span className="font-semibold">Order ID:</span> {order.id}</p>
-                      <p><span className="font-semibold">Customer:</span> {order.customerName}</p>
-                      <p><span className="font-semibold">Total:</span> Rp {order.totalPrice?.toLocaleString("id-ID")}</p>
-                      <p><span className="font-semibold">Delivered At:</span> {new Date(order.createdAt).toLocaleString()}</p>
+<p><span className="font-semibold">Customer:</span> {order.customerName}</p>
+<p><span className="font-semibold">Address:</span> {order.customerStreet}, {order.customerCity}, {order.customerPostalCode}</p>
+<p><span className="font-semibold">Phone:</span> {order.customerPhone}</p>
+<p><span className="font-semibold">Total:</span> Rp {order.totalPrice?.toLocaleString("id-ID")}</p>
+<p><span className="font-semibold">Delivered At:</span> {new Date(order.createdAt).toLocaleString()}</p>
                       <div className="flex items-center mt-2 space-x-2">
                         {statusOrder.map((s) => (
                           <span key={s} className={`w-3 h-3 rounded-full ${order.status === s ? "bg-blue-500" : "bg-blue-200"} transition-all`}></span>

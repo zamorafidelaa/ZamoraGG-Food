@@ -11,11 +11,7 @@ const Cart = () => {
   const [showConfirm, setShowConfirm] = useState(false);
   const [pendingOrder, setPendingOrder] = useState(null);
 
-  const [addresses, setAddresses] = useState([]);
-  const [selectedAddressId, setSelectedAddressId] = useState(null);
-  const [showAddressModal, setShowAddressModal] = useState(false);
-
-  const [newAddress, setNewAddress] = useState({
+  const [address, setAddress] = useState({
     street: "",
     city: "",
     postalCode: "",
@@ -24,7 +20,7 @@ const Cart = () => {
 
   const userId = localStorage.getItem("userId");
 
-  // Ambil cart
+  // Load cart
   useEffect(() => {
     if (userId) {
       fetch(`http://localhost:8080/cart/${userId}`)
@@ -34,24 +30,26 @@ const Cart = () => {
     }
   }, [userId]);
 
-  // Ambil alamat user
+  // Load user address
   useEffect(() => {
     if (userId) {
-      fetch(`http://localhost:8080/addresses/user/${userId}`)
+      fetch(`http://localhost:8080/users/${userId}`)
         .then((res) => res.json())
         .then((resJson) => {
           if (resJson.data) {
-            setAddresses(resJson.data);
-            if (resJson.data.length > 0) setSelectedAddressId(resJson.data[0].id);
-          } else {
-            setAddresses([]);
+            const user = resJson.data;
+            setAddress({
+              street: user.street || "",
+              city: user.city || "",
+              postalCode: user.postalCode || "",
+              phone: user.phone || "",
+            });
           }
         })
-        .catch((err) => console.error("Failed to load addresses:", err));
+        .catch((err) => console.error("Failed to load user address:", err));
     }
   }, [userId]);
 
-  // Toggle item selection
   const toggleSelect = (id) => {
     setSelectedItems((prev) =>
       prev.includes(id) ? prev.filter((itemId) => itemId !== id) : [...prev, id]
@@ -69,7 +67,6 @@ const Cart = () => {
   const allSelected = cart.length > 0 && selectedItems.length === cart.length;
   const itemsToCheckout = cart.filter((item) => selectedItems.includes(item.id));
 
-  // Update quantity
   const updateQuantity = async (cartId, newQuantity) => {
     if (newQuantity < 1) return;
     const updatedItem = cart.find((c) => c.id === cartId);
@@ -103,41 +100,27 @@ const Cart = () => {
     }
   };
 
-  // Tambah alamat
-  const handleAddAddress = async () => {
-    const { street, city, postalCode, phone } = newAddress;
-    if (!street || !city || !postalCode || !phone) {
-      setMessage("⚠️ Please fill all address fields.");
-      return;
-    }
-
-    try {
-      const res = await fetch("http://localhost:8080/addresses/add", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...newAddress, user: { id: parseInt(userId, 10) } }),
-      });
-      const data = await res.json();
-      if (res.ok && data) {
-        setAddresses((prev) => [...prev, data]);
-        setSelectedAddressId(data.id);
-        setShowAddressModal(false);
-        setNewAddress({ street: "", city: "", postalCode: "", phone: "" });
-        setMessage("✅ Address added successfully!");
-      } else {
-        setMessage(data.message || "❌ Failed to add address.");
-      }
-    } catch (err) {
-      console.error("Add address error:", err);
-      setMessage("❌ Failed to connect to server.");
-    }
-  };
-
-  // Checkout
   const handleCheckoutClick = async () => {
     if (!userId) return setMessage("⚠️ You must be logged in to checkout.");
-    if (selectedItems.length === 0) return setMessage("⚠️ Please select at least one item.");
-    if (!selectedAddressId) return setShowAddressModal(true);
+    if (selectedItems.length === 0)
+      return setMessage("⚠️ Please select at least one item.");
+
+    let user;
+    try {
+      const res = await fetch(`http://localhost:8080/users/${userId}`);
+      const result = await res.json();
+      if (!res.ok || !result.data)
+        return setMessage("❌ Failed to get user data.");
+      user = result.data;
+    } catch (err) {
+      console.error(err);
+      return setMessage("❌ Failed to connect to server.");
+    }
+
+    if (!address.street || !address.city || !address.postalCode || !address.phone) {
+      setMessage("Customer address is incomplete. Please fill it before checkout.");
+      return;
+    }
 
     try {
       const res = await fetch("http://localhost:8080/orders/create", {
@@ -145,7 +128,6 @@ const Cart = () => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           customer: { id: parseInt(userId, 10) },
-          address: { id: parseInt(selectedAddressId, 10) },
           items: itemsToCheckout.map((item) => ({
             menu: { id: item.menu.id },
             quantity: item.quantity,
@@ -166,43 +148,92 @@ const Cart = () => {
     }
   };
 
-  const confirmCheckout = async () => {
-    if (!pendingOrder) return;
-    setReceiptData({
-      order: { ...pendingOrder, checkoutTime: new Date().toLocaleString() },
-      items: itemsToCheckout,
-    });
-    setMessage("✅ Checkout successful!");
-    setShowReceipt(true);
-    itemsToCheckout.forEach((item) => removeFromCart(item.id));
-    setSelectedItems([]);
-    setPendingOrder(null);
-    setShowConfirm(false);
-    window.dispatchEvent(new Event("cartUpdated"));
-  };
+const confirmCheckout = async () => {
+  if (!pendingOrder) return;
 
+  const subtotal = itemsToCheckout.reduce(
+    (sum, item) => sum + item.menu.price * item.quantity,
+    0
+  );
+  const deliveryFee = pendingOrder.order.deliveryFee || 0;
+
+  setReceiptData({
+    order: {
+      ...pendingOrder.order,
+      checkoutTime: new Date().toLocaleString(),
+      totalPrice: subtotal + deliveryFee,
+      deliveryFee: deliveryFee, // <-- tambahkan ini
+      address: { ...address },
+    },
+    items: itemsToCheckout,
+  });
+
+  setMessage("✅ Checkout successful!");
+  setShowReceipt(true);
+  itemsToCheckout.forEach((item) => removeFromCart(item.id));
+  setSelectedItems([]);
+  setPendingOrder(null);
+  setShowConfirm(false);
+  window.dispatchEvent(new Event("cartUpdated"));
+};
+
+  // Print PDF receipt styled like struk kasir
   const printReceipt = () => {
     if (!receiptData) return;
     const { order, items } = receiptData;
     const doc = new jsPDF();
-    doc.setFontSize(18);
-    doc.text("Receipt", 14, 20);
+    let y = 20;
+
+    doc.setFont("courier", "normal"); // Monospaced font
+    doc.setFontSize(14);
+    doc.text("===== RECEIPT =====", 14, y);
+    y += 10;
+
     doc.setFontSize(12);
-    doc.text(`Order ID: ${order.id}`, 14, 30);
-    doc.text(`Checkout Time: ${order.checkoutTime}`, 14, 38);
-    doc.text(
-      `Delivery To: ${order.address?.street}, ${order.address?.city}, ${order.address?.postalCode}`,
-      14,
-      46
-    );
-    const rows = items.map((item) => [
-      item.menu.name,
-      item.quantity,
-      `Rp ${item.menu.price.toLocaleString("id-ID")}`,
-      `Rp ${(item.menu.price * item.quantity).toLocaleString("id-ID")}`,
-    ]);
-    doc.autoTable({ head: [["Item", "Qty", "Price", "Total"]], body: rows, startY: 55 });
-    doc.text(`Grand Total: Rp ${order.totalPrice?.toLocaleString("id-ID")}`, 14, doc.lastAutoTable.finalY + 10);
+    doc.text(`Order ID   : ${order.id}`, 14, y);
+    y += 7;
+    doc.text(`Checkout   : ${order.checkoutTime}`, 14, y);
+    y += 7;
+    doc.text(`Delivery To: ${order.address.street}`, 14, y);
+    y += 6;
+    doc.text(`            ${order.address.city}, ${order.address.postalCode}`, 14, y);
+    y += 6;
+    doc.text(`Phone      : ${order.address.phone}`, 14, y);
+    y += 10;
+
+    doc.text("-------------------------------", 14, y);
+    y += 6;
+    doc.text("Item                Qty   Total", 14, y);
+    y += 6;
+    doc.text("-------------------------------", 14, y);
+    y += 6;
+
+    items.forEach((item) => {
+      let name = item.menu.name.length > 16 ? item.menu.name.slice(0, 16) + "…" : item.menu.name;
+      let qty = item.quantity.toString().padStart(3, " ");
+      let total = (item.menu.price * item.quantity).toLocaleString("id-ID").padStart(7, " ");
+      doc.text(`${name.padEnd(18, " ")} ${qty} ${total}`, 14, y);
+      y += 6;
+      if (y > 270) {
+        doc.addPage();
+        y = 20;
+      }
+    });
+
+    doc.text("-------------------------------", 14, y);
+    y += 6;
+    const subtotal = items.reduce((sum, item) => sum + item.menu.price * item.quantity, 0);
+    const deliveryFee = order.order?.deliveryFee || 0;
+    doc.text(`Subtotal       : ${subtotal.toLocaleString("id-ID")}`, 14, y);
+    y += 6;
+    doc.text(`Delivery Fee   : ${deliveryFee.toLocaleString("id-ID")}`, 14, y);
+    y += 6;
+    doc.text(`TOTAL          : ${(subtotal + deliveryFee).toLocaleString("id-ID")}`, 14, y);
+    y += 10;
+    doc.text("===============================", 14, y);
+    y += 6;
+    doc.text("Thank you for your order!", 14, y);
+
     doc.save("receipt.pdf");
   };
 
@@ -219,7 +250,9 @@ const Cart = () => {
               onClick={toggleSelectAll}
               disabled={cart.length === 0}
               className={`text-sm px-3 py-1 rounded-lg transition ${
-                cart.length === 0 ? "bg-gray-300 text-gray-500 cursor-not-allowed" : "bg-blue-500 text-white hover:bg-blue-600"
+                cart.length === 0
+                  ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                  : "bg-blue-500 text-white hover:bg-blue-600"
               }`}
             >
               {allSelected ? "Deselect All" : "Select All"}
@@ -243,22 +276,50 @@ const Cart = () => {
                 className="w-5 h-5 accent-blue-500"
               />
               <img
-                src={item.menu.imageUrl ? `http://localhost:8080${item.menu.imageUrl}` : "/food-placeholder.jpg"}
+                src={
+                  item.menu.imageUrl
+                    ? `http://localhost:8080${item.menu.imageUrl}`
+                    : "/food-placeholder.jpg"
+                }
                 alt={item.menu.name}
                 className="w-20 h-20 rounded-xl object-cover"
               />
               <div className="flex-1">
-                <h3 className="text-lg font-semibold text-gray-800">{item.menu.name}</h3>
-                <p className="text-sm text-gray-500">{item.menu.restaurant?.name || "Unknown Restaurant"}</p>
-                <p className="text-blue-600 font-bold">Rp {item.menu.price.toLocaleString("id-ID")}</p>
+                <h3 className="text-lg font-semibold text-gray-800">
+                  {item.menu.name}
+                </h3>
+                <p className="text-sm text-gray-500">
+                  {item.menu.restaurant?.name || "Unknown Restaurant"}
+                </p>
+                <p className="text-blue-600 font-bold">
+                  Rp {item.menu.price.toLocaleString("id-ID")}
+                </p>
               </div>
               <div className="flex items-center gap-2">
-                <button onClick={() => updateQuantity(item.id, item.quantity - 1)} disabled={item.quantity <= 1} className="bg-gray-200 px-2 rounded-md hover:bg-gray-300">-</button>
+                <button
+                  onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                  disabled={item.quantity <= 1}
+                  className="bg-gray-200 px-2 rounded-md hover:bg-gray-300"
+                >
+                  -
+                </button>
                 <span className="px-2">{item.quantity}</span>
-                <button onClick={() => updateQuantity(item.id, item.quantity + 1)} className="bg-gray-200 px-2 rounded-md hover:bg-gray-300">+</button>
+                <button
+                  onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                  className="bg-gray-200 px-2 rounded-md hover:bg-gray-300"
+                >
+                  +
+                </button>
               </div>
-              <div className="font-semibold text-gray-700 w-28 text-right">Rp {(item.menu.price * item.quantity).toLocaleString("id-ID")}</div>
-              <button onClick={() => removeFromCart(item.id)} className="text-red-500 font-bold hover:text-red-700">✕</button>
+              <div className="font-semibold text-gray-700 w-28 text-right">
+                Rp {(item.menu.price * item.quantity).toLocaleString("id-ID")}
+              </div>
+              <button
+                onClick={() => removeFromCart(item.id)}
+                className="text-red-500 font-bold hover:text-red-700"
+              >
+                ✕
+              </button>
             </motion.div>
           ))}
 
@@ -273,57 +334,172 @@ const Cart = () => {
 
       {message && <p className="mt-4 text-green-600">{message}</p>}
 
-      {/* Modals */}
       <AnimatePresence>
-        {showAddressModal && (
-          <motion.div className="fixed inset-0 bg-black/60 flex items-center justify-center" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-            <motion.div className="bg-white p-6 rounded-2xl shadow-xl w-full max-w-md" initial={{ y: 50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 50, opacity: 0 }}>
-              <h2 className="text-xl font-bold mb-4 text-center text-blue-600">Add Delivery Address</h2>
-              <input type="text" placeholder="Street" value={newAddress.street || ""} onChange={(e) => setNewAddress({ ...newAddress, street: e.target.value })} className="w-full border p-2 mb-2 rounded-lg" />
-              <input type="text" placeholder="City" value={newAddress.city || ""} onChange={(e) => setNewAddress({ ...newAddress, city: e.target.value })} className="w-full border p-2 mb-2 rounded-lg" />
-              <input type="text" placeholder="Postal Code" value={newAddress.postalCode || ""} onChange={(e) => setNewAddress({ ...newAddress, postalCode: e.target.value })} className="w-full border p-2 mb-2 rounded-lg" />
-              <input type="text" placeholder="Phone" value={newAddress.phone || ""} onChange={(e) => setNewAddress({ ...newAddress, phone: e.target.value })} className="w-full border p-2 mb-4 rounded-lg" />
-              <div className="flex gap-2">
-                <button onClick={() => setShowAddressModal(false)} className="flex-1 bg-gray-300 py-2 rounded-lg hover:bg-gray-400">Cancel</button>
-                <button onClick={handleAddAddress} className="flex-1 bg-green-500 text-white py-2 rounded-lg hover:bg-green-600">Add Address</button>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-
+        {/* Confirm Checkout Modal */}
         {showConfirm && pendingOrder && (
-          <motion.div className="fixed inset-0 bg-black/60 flex items-center justify-center" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-            <motion.div className="bg-white p-6 rounded-2xl shadow-xl w-full max-w-md" initial={{ y: 50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 50, opacity: 0 }}>
-              <h2 className="text-xl font-bold mb-4 text-center text-blue-600">Confirm Checkout</h2>
-              <p className="mb-4">You are about to checkout {itemsToCheckout.length} item(s).</p>
-              <p className="mb-4 font-semibold">Delivery Address: {addresses.find((a) => a.id === selectedAddressId)?.street}, {addresses.find((a) => a.id === selectedAddressId)?.city}, {addresses.find((a) => a.id === selectedAddressId)?.postalCode}</p>
+          <motion.div
+            className="fixed inset-0 bg-black/60 flex items-center justify-center z-50"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            <motion.div
+              className="bg-white p-6 rounded-2xl shadow-xl w-full max-w-md"
+              initial={{ y: 50, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: 50, opacity: 0 }}
+            >
+              <h2 className="text-xl font-bold mb-4 text-center text-blue-600">
+                Confirm Checkout
+              </h2>
+
+              <h3 className="font-semibold mb-2">Delivery Address</h3>
+              <input
+                type="text"
+                placeholder="Street"
+                value={address.street}
+                onChange={(e) => setAddress({ ...address, street: e.target.value })}
+                className="w-full border p-2 mb-2 rounded-lg"
+              />
+              <input
+                type="text"
+                placeholder="City"
+                value={address.city}
+                onChange={(e) => setAddress({ ...address, city: e.target.value })}
+                className="w-full border p-2 mb-2 rounded-lg"
+              />
+              <input
+                type="text"
+                placeholder="Postal Code"
+                value={address.postalCode}
+                onChange={(e) =>
+                  setAddress({ ...address, postalCode: e.target.value })
+                }
+                className="w-full border p-2 mb-2 rounded-lg"
+              />
+              <input
+                type="text"
+                placeholder="Phone"
+                value={address.phone}
+                onChange={(e) => setAddress({ ...address, phone: e.target.value })}
+                className="w-full border p-2 mb-4 rounded-lg"
+              />
+
+              <div className="mb-4">
+                <h3 className="font-semibold mb-2">Order Details:</h3>
+                <ul className="divide-y divide-gray-200 max-h-40 overflow-y-auto">
+                  {itemsToCheckout.map((item) => (
+                    <li key={item.id} className="py-1 flex justify-between">
+                      <span>
+                        {item.menu.name} x {item.quantity}
+                      </span>
+                      <span>
+                        Rp {(item.menu.price * item.quantity).toLocaleString("id-ID")}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              <div className="mb-2 flex justify-between font-semibold">
+                <span>Subtotal:</span>
+                <span>
+                  Rp {itemsToCheckout.reduce((sum, item) => sum + item.menu.price * item.quantity, 0).toLocaleString("id-ID")}
+                </span>
+              </div>
+
+              <div className="mb-2 flex justify-between font-semibold">
+                <span>Delivery Fee:</span>
+                <span>Rp {pendingOrder.order.deliveryFee?.toLocaleString("id-ID") || 0}</span>
+              </div>
+
+              <div className="mb-4 flex justify-between font-bold text-blue-600">
+                <span>Total:</span>
+                <span>
+                  Rp {(
+                    itemsToCheckout.reduce((sum, item) => sum + item.menu.price * item.quantity, 0) +
+                    (pendingOrder.order.deliveryFee || 0)
+                  ).toLocaleString("id-ID")}
+                </span>
+              </div>
+
               <div className="flex gap-2">
-                <button onClick={() => setShowConfirm(false)} className="flex-1 bg-gray-300 py-2 rounded-lg hover:bg-gray-400">Cancel</button>
-                <button onClick={confirmCheckout} className="flex-1 bg-green-500 text-white py-2 rounded-lg hover:bg-green-600">Confirm</button>
+                <button
+                  onClick={() => setShowConfirm(false)}
+                  className="flex-1 bg-gray-300 py-2 rounded-lg hover:bg-gray-400"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={confirmCheckout}
+                  className="flex-1 bg-green-500 text-white py-2 rounded-lg hover:bg-green-600"
+                >
+                  Confirm
+                </button>
               </div>
             </motion.div>
           </motion.div>
         )}
 
-        {showReceipt && receiptData && (
-          <motion.div className="fixed inset-0 bg-black/60 flex items-center justify-center" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-            <motion.div className="bg-white p-6 rounded-2xl shadow-xl w-full max-w-md" initial={{ y: 50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 50, opacity: 0 }}>
-              <h2 className="text-xl font-bold mb-4 text-center text-blue-600">Receipt</h2>
-              <p>Order ID: {receiptData.order.id}</p>
-              <p>Checkout Time: {receiptData.order.checkoutTime}</p>
-              <p>Delivery To: {receiptData.order.address?.street}, {receiptData.order.address?.city}, {receiptData.order.address?.postalCode}</p>
-              <ul className="my-4 list-disc list-inside">
-                {receiptData.items.map((item) => (
-                  <li key={item.id}>{item.menu.name} x {item.quantity} = Rp {(item.menu.price * item.quantity).toLocaleString("id-ID")}</li>
-                ))}
-              </ul>
-              <div className="flex gap-2">
-                <button onClick={() => setShowReceipt(false)} className="flex-1 bg-gray-300 py-2 rounded-lg hover:bg-gray-400">Close</button>
-                <button onClick={printReceipt} className="flex-1 bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-600">Print PDF</button>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
+{/* Receipt Modal */}
+{showReceipt && receiptData && (
+  <motion.div
+    className="fixed inset-0 bg-black/60 flex items-center justify-center z-50"
+    initial={{ opacity: 0 }}
+    animate={{ opacity: 1 }}
+    exit={{ opacity: 0 }}
+  >
+    <motion.div
+      className="bg-white p-6 rounded-2xl shadow-xl w-full max-w-md font-mono"
+      initial={{ y: 50, opacity: 0 }}
+      animate={{ y: 0, opacity: 1 }}
+      exit={{ y: 50, opacity: 0 }}
+    >
+      <h2 className="text-xl font-bold mb-4 text-center text-blue-600">
+        RECEIPT
+      </h2>
+      <p>Order ID   : {receiptData.order.id}</p>
+      <p>Checkout   : {receiptData.order.checkoutTime}</p>
+      <p>Delivery To: {receiptData.order.address.street}, {receiptData.order.address.city}, {receiptData.order.address.postalCode}</p>
+      <p>Phone      : {receiptData.order.address.phone}</p>
+      <hr className="my-2"/>
+      <ul className="my-2 list-disc list-inside">
+        {receiptData.items.map((item) => (
+          <li key={item.id}>
+            {item.menu.name} x {item.quantity} = Rp {(item.menu.price * item.quantity).toLocaleString("id-ID")}
+          </li>
+        ))}
+      </ul>
+      <hr className="my-2"/>
+      <div className="mb-2 flex justify-between font-semibold">
+        <span>Subtotal:</span>
+        <span>Rp {receiptData.items.reduce((sum, item) => sum + item.menu.price * item.quantity, 0).toLocaleString("id-ID")}</span>
+      </div>
+      <div className="mb-2 flex justify-between font-semibold">
+        <span>Delivery Fee:</span>
+        <span>Rp {receiptData.order.deliveryFee?.toLocaleString("id-ID") || 0}</span>
+      </div>
+      <div className="mb-4 flex justify-between font-bold text-blue-600">
+        <span>Total:</span>
+        <span>Rp {receiptData.order.totalPrice?.toLocaleString("id-ID")}</span>
+      </div>
+      <div className="flex gap-2">
+        <button
+          onClick={() => setShowReceipt(false)}
+          className="flex-1 bg-gray-300 py-2 rounded-lg hover:bg-gray-400"
+        >
+          Close
+        </button>
+        <button
+          onClick={printReceipt}
+          className="flex-1 bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-600"
+        >
+          Print PDF
+        </button>
+      </div>
+    </motion.div>
+  </motion.div>
+)}
       </AnimatePresence>
     </div>
   );

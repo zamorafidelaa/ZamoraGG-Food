@@ -14,9 +14,6 @@ import com.deliveryfood.backend.repository.*;
 public class OrderController {
 
     @Autowired
-    private AddressRepository addressRepository;
-    
-    @Autowired
     private OrderRepository orderRepository;
 
     @Autowired
@@ -28,12 +25,12 @@ public class OrderController {
     @Autowired
     private MenuRepository menuRepository;
 
-    @PostMapping("/create")
+  @PostMapping("/create")
     public Map<String, Object> createOrder(@RequestBody Order order) {
         Map<String, Object> response = new LinkedHashMap<>();
 
         try {
-            // ✅ validasi customer
+            // ✅ Validasi customer
             if (order.getCustomer() == null || order.getCustomer().getId() == null) {
                 response.put("message", "Customer is required");
                 response.put("data", null);
@@ -48,36 +45,20 @@ public class OrderController {
             }
             order.setCustomer(customer);
 
-            // ✅ validasi address
-            if (order.getAddress() == null || order.getAddress().getId() == null) {
-                response.put("message", "Address is required");
+            // ✅ Ambil alamat dari user langsung
+            if (customer.getStreet() == null || customer.getCity() == null || customer.getPostalCode() == null) {
+                response.put("message", "Customer address is incomplete. Please update your address.");
                 response.put("data", null);
                 return response;
             }
 
-            Address address = addressRepository.findById(order.getAddress().getId()).orElse(null);
-            if (address == null) {
-                response.put("message", "Address not found");
-                response.put("data", null);
-                return response;
-            }
-
-            // pastikan address milik customer yang sama
-            if (!address.getUser().getId().equals(customer.getId())) {
-                response.put("message", "Address does not belong to the customer");
-                response.put("data", null);
-                return response;
-            }
-
-            order.setAddress(address); // set address ke order
-
-            // ✅ simpan order kosong dulu biar dapet ID
+            // Simpan order kosong dulu biar dapat ID
             Order savedOrder = orderRepository.save(order);
 
             double subtotal = 0.0;
             Set<Long> restoIds = new HashSet<>();
 
-            // ✅ proses item
+            // ✅ Proses item
             if (order.getItems() != null) {
                 for (OrderItem item : order.getItems()) {
                     if (item.getMenu() != null && item.getMenu().getId() != null) {
@@ -88,17 +69,11 @@ public class OrderController {
                         item.setMenu(menu);
                         item.setOrder(savedOrder);
 
-                        // ✅ Set harga per unit dari menu
                         item.setPrice(menu.getPrice());
-
-                        // ✅ Hitung total per item (price × qty)
                         double totalItem = menu.getPrice() * item.getQuantity();
                         item.setTotalPriceItem(totalItem);
-
-                        // ✅ Tambah ke subtotal
                         subtotal += totalItem;
 
-                        // kumpulin restoId
                         if (menu.getRestaurant() != null) {
                             restoIds.add(menu.getRestaurant().getId());
                         }
@@ -108,7 +83,7 @@ public class OrderController {
                 }
             }
 
-            // ✅ hitung ongkir: 5rb + (resto - 1) * 2rb
+            // ✅ Hitung ongkir: 5rb + (resto - 1) * 2rb
             double deliveryFee = 0.0;
             if (!restoIds.isEmpty()) {
                 deliveryFee = 5000 + (restoIds.size() - 1) * 2000;
@@ -117,11 +92,20 @@ public class OrderController {
             savedOrder.setDeliveryFee(deliveryFee);
             savedOrder.setTotalPrice(subtotal + deliveryFee);
 
-            // ✅ update order dengan harga final
             savedOrder = orderRepository.save(savedOrder);
 
+            // ✅ Sertakan info alamat customer di response (tanpa field baru di Order)
+            Map<String, Object> dataWithAddress = new LinkedHashMap<>();
+            dataWithAddress.put("order", savedOrder);
+            dataWithAddress.put("address", Map.of(
+                    "street", customer.getStreet(),
+                    "city", customer.getCity(),
+                    "postalCode", customer.getPostalCode(),
+                    "phone", customer.getPhone()
+            ));
+
             response.put("message", "Order successfully created");
-            response.put("data", savedOrder);
+            response.put("data", dataWithAddress);
 
         } catch (Exception e) {
             response.put("message", "Failed to create order: " + e.getMessage());
@@ -130,7 +114,6 @@ public class OrderController {
 
         return response;
     }
-
     @GetMapping("/get")
     public Map<String, Object> getAllOrders() {
         Map<String, Object> response = new LinkedHashMap<>();
@@ -225,13 +208,6 @@ public class OrderController {
         List<Order> allOrders = orderRepository.findAll();
         Map<String, Double> report = new LinkedHashMap<>();
 
-        System.out.println("Total orders found: " + allOrders.size());
-        for (Order o : allOrders) {
-            System.out.println("Order ID: " + o.getId() +
-                    ", createdAt=" + o.getCreatedAt() +
-                    ", totalPrice=" + o.getTotalPrice());
-        }
-
         switch (type.toLowerCase()) {
             case "daily":
                 report = allOrders.stream()
@@ -280,5 +256,4 @@ public class OrderController {
 
         return response;
     }
-
 }

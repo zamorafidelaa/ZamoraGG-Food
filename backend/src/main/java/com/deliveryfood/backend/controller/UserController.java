@@ -9,6 +9,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -62,57 +63,57 @@ public class UserController {
         return ResponseEntity.ok(Map.of("message", "Courier registered successfully!"));
     }
 
-// Edit kurir
-@PutMapping("/courier/{adminId}/{courierId}")
-public ResponseEntity<?> editCourier(
-        @PathVariable Long adminId,
-        @PathVariable Long courierId,
-        @RequestBody User updatedUser) {
+    // Edit kurir
+    @PutMapping("/courier/{adminId}/{courierId}")
+    public ResponseEntity<?> editCourier(
+            @PathVariable Long adminId,
+            @PathVariable Long courierId,
+            @RequestBody User updatedUser) {
 
-    Optional<User> admin = userRepository.findById(adminId);
-    if (admin.isEmpty() || admin.get().getRole() != User.Role.ADMIN) {
-        return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                .body(Map.of("message", "Only admin can edit courier!"));
+        Optional<User> admin = userRepository.findById(adminId);
+        if (admin.isEmpty() || admin.get().getRole() != User.Role.ADMIN) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of("message", "Only admin can edit courier!"));
+        }
+
+        Optional<User> courier = userRepository.findById(courierId);
+        if (courier.isEmpty() || courier.get().getRole() != User.Role.COURIER) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("message", "Courier not found!"));
+        }
+
+        User c = courier.get();
+        c.setName(updatedUser.getName());
+        c.setEmail(updatedUser.getEmail());
+        if (updatedUser.getPassword() != null && !updatedUser.getPassword().isEmpty()) {
+            c.setPassword(passwordEncoder.encode(updatedUser.getPassword()));
+        }
+        userRepository.save(c);
+
+        return ResponseEntity.ok(Map.of("message", "Courier updated successfully!"));
     }
 
-    Optional<User> courier = userRepository.findById(courierId);
-    if (courier.isEmpty() || courier.get().getRole() != User.Role.COURIER) {
-        return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                .body(Map.of("message", "Courier not found!"));
+    // Delete kurir
+    @DeleteMapping("/courier/{adminId}/{courierId}")
+    public ResponseEntity<?> deleteCourier(
+            @PathVariable Long adminId,
+            @PathVariable Long courierId) {
+
+        Optional<User> admin = userRepository.findById(adminId);
+        if (admin.isEmpty() || admin.get().getRole() != User.Role.ADMIN) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of("message", "Only admin can delete courier!"));
+        }
+
+        Optional<User> courier = userRepository.findById(courierId);
+        if (courier.isEmpty() || courier.get().getRole() != User.Role.COURIER) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("message", "Courier not found!"));
+        }
+
+        userRepository.delete(courier.get());
+        return ResponseEntity.ok(Map.of("message", "Courier deleted successfully!"));
     }
-
-    User c = courier.get();
-    c.setName(updatedUser.getName());
-    c.setEmail(updatedUser.getEmail());
-    if (updatedUser.getPassword() != null && !updatedUser.getPassword().isEmpty()) {
-        c.setPassword(passwordEncoder.encode(updatedUser.getPassword()));
-    }
-    userRepository.save(c);
-
-    return ResponseEntity.ok(Map.of("message", "Courier updated successfully!"));
-}
-
-// Delete kurir
-@DeleteMapping("/courier/{adminId}/{courierId}")
-public ResponseEntity<?> deleteCourier(
-        @PathVariable Long adminId,
-        @PathVariable Long courierId) {
-
-    Optional<User> admin = userRepository.findById(adminId);
-    if (admin.isEmpty() || admin.get().getRole() != User.Role.ADMIN) {
-        return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                .body(Map.of("message", "Only admin can delete courier!"));
-    }
-
-    Optional<User> courier = userRepository.findById(courierId);
-    if (courier.isEmpty() || courier.get().getRole() != User.Role.COURIER) {
-        return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                .body(Map.of("message", "Courier not found!"));
-    }
-
-    userRepository.delete(courier.get());
-    return ResponseEntity.ok(Map.of("message", "Courier deleted successfully!"));
-}
 
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody User loginUser) {
@@ -131,4 +132,46 @@ public ResponseEntity<?> deleteCourier(
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                 .body(Map.of("message", "Invalid email or password!"));
     }
+
+    // Update alamat user
+    @PutMapping("/{userId}/address")
+    public ResponseEntity<?> updateAddress(
+            @PathVariable Long userId,
+            @RequestBody Map<String, String> addressData) {
+
+        Optional<User> userOpt = userRepository.findById(userId);
+        if (userOpt.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("message", "User not found"));
+        }
+
+        User user = userOpt.get();
+
+        user.setStreet(addressData.getOrDefault("street", user.getStreet()));
+        user.setCity(addressData.getOrDefault("city", user.getCity()));
+        user.setPostalCode(addressData.getOrDefault("postalCode", user.getPostalCode()));
+        user.setPhone(addressData.getOrDefault("phone", user.getPhone()));
+
+        userRepository.save(user);
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("message", "Address updated successfully");
+        response.put("data", user);
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/{id}")
+    public Map<String, Object> getUserById(@PathVariable Long id) {
+        Map<String, Object> response = new LinkedHashMap<>();
+        Optional<User> userOpt = userRepository.findById(id);
+        if (userOpt.isEmpty()) {
+            response.put("message", "User with ID " + id + " not found");
+            response.put("data", null);
+        } else {
+            response.put("message", "User retrieved successfully");
+            response.put("data", userOpt.get());
+        }
+        return response;
+    }
 }
+
