@@ -5,7 +5,6 @@ import Footer from "./components/Footer";
 function App() {
   const location = useLocation();
 
-  // Tampilkan Header & Footer hanya untuk halaman pelanggan, kecuali login & register
   const showHeaderFooter =
     location.pathname !== "/login" &&
     location.pathname !== "/register" &&

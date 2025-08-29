@@ -18,7 +18,7 @@ import Cart from "./pages/Cart";
 import CourierDashboard from "./pages/CourierDashboard";
 import CustomerOrders from "./pages/CustomerOrders";
 import AdminReports from "./pages/AdminReports";
-
+import Profile from "./pages/Profile";
 
 const router = createBrowserRouter([
   {
@@ -26,17 +26,18 @@ const router = createBrowserRouter([
     element: <App />,
     children: [
       { path: "/", element: <Home /> },
-      { path: "/about", element: <About /> },
-      { path: "/login", element: <Login /> },
       { path: "/register", element: <Register /> },
+      { path: "/login", element: <Login /> },
+      { path: "/about", element: <About /> },
       { path: "/menu", element: <Menu /> },
       { path: "/cart", element: <Cart /> },
       { path: "/orders", element: <CustomerOrders /> },
+      { path: "/profile", element: <Profile /> },
     ],
   },
   {
     path: "/admin",
-    element: <AdminLayout />, 
+    element: <AdminLayout />,
     children: [
       { path: "dashboard", element: <AdminDashboard /> },
       { path: "couriers", element: <AdminCouriers /> },
@@ -47,13 +48,13 @@ const router = createBrowserRouter([
     ],
   },
   {
-    path: "/courier", 
+    path: "/courier",
     element: <CourierDashboard />,
   },
 ]);
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
-      <RouterProvider router={router} />
+    <RouterProvider router={router} />
   </React.StrictMode>
 );

@@ -29,7 +29,7 @@ public class MenuController {
     @Autowired
     private RestaurantRepository restaurantRepository;
 
-    private final Path uploadDir = Paths.get("uploads"); // folder penyimpanan gambar
+    private final Path uploadDir = Paths.get("uploads"); 
 
     // ------------------- CREATE -------------------
     @PostMapping("/create")
@@ -37,7 +37,6 @@ public class MenuController {
                                           @RequestPart(value = "image", required = false) MultipartFile imageFile) {
         Map<String, Object> response = new LinkedHashMap<>();
         try {
-            // cek restoran
             Long restaurantId = menu.getRestaurant().getId();
             Restaurant restaurant = restaurantRepository.findById(restaurantId).orElse(null);
             if (restaurant == null) {
@@ -47,9 +46,8 @@ public class MenuController {
             }
             menu.setRestaurant(restaurant);
 
-            // simpan file gambar jika ada
             if (imageFile != null && !imageFile.isEmpty()) {
-                Files.createDirectories(uploadDir); // pastikan folder ada
+                Files.createDirectories(uploadDir); 
                 String filename = System.currentTimeMillis() + "_" + imageFile.getOriginalFilename();
                 Path filepath = uploadDir.resolve(filename);
                 Files.write(filepath, imageFile.getBytes());
@@ -84,13 +82,11 @@ public class MenuController {
             existing.setPrice(menuDetails.getPrice());
             existing.setDescription(menuDetails.getDescription());
 
-            // cek dan update restoran
             if (menuDetails.getRestaurant() != null && menuDetails.getRestaurant().getId() != null) {
                 Restaurant restaurant = restaurantRepository.findById(menuDetails.getRestaurant().getId()).orElse(null);
                 if (restaurant != null) existing.setRestaurant(restaurant);
             }
 
-            // update gambar jika ada
             if (imageFile != null && !imageFile.isEmpty()) {
                 Files.createDirectories(uploadDir);
                 String filename = System.currentTimeMillis() + "_" + imageFile.getOriginalFilename();

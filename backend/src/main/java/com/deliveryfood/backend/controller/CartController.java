@@ -13,27 +13,23 @@ import java.util.List;
 public class CartController {
 
     @Autowired
-    private CartRepository cartRepository; // langsung inject tanpa constructor
+    private CartRepository cartRepository; 
 
-    // Get semua cart
     @GetMapping
     public List<Cart> getAllCart() {
         return cartRepository.findAll();
     }
 
-    // Get cart by userId
     @GetMapping("/{userId}")
     public List<Cart> getCartByUser(@PathVariable Long userId) {
         return cartRepository.findByUserId(userId);
     }
 
-    // Tambah ke cart
     @PostMapping
     public Cart addToCart(@RequestBody Cart cart) {
         return cartRepository.save(cart);
     }
 
-    // Hapus cart item berdasarkan id
     @DeleteMapping("/{id}")
     public void deleteCartItem(@PathVariable Long id) {
         cartRepository.deleteById(id);

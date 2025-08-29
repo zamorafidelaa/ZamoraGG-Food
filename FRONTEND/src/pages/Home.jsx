@@ -58,7 +58,7 @@ const categories = [
   },
 ];
 
-const CategoryCard = ({ category }) => {
+const AnimatedCard = ({ children, className = "" }) => {
   const ref = useRef();
 
   useEffect(() => {
@@ -81,21 +81,27 @@ const CategoryCard = ({ category }) => {
   return (
     <div
       ref={ref}
-      className="rounded-3xl overflow-hidden relative shadow-md opacity-0 translate-y-10 scale-95 transition-all duration-700 hover:scale-105 hover:shadow-2xl group"
+      className={`opacity-0 translate-y-8 scale-95 transition-all duration-700 ${className}`}
     >
-      <img
-        src={category.image}
-        alt={category.name}
-        className="w-full h-60 object-cover transition-transform duration-700 group-hover:scale-110"
-      />
-      <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-center justify-center">
-        <h3 className="text-white text-2xl font-extrabold text-center drop-shadow-lg tracking-wide">
-          {category.name}
-        </h3>
-      </div>
+      {children}
     </div>
   );
 };
+
+const CategoryCard = ({ category }) => (
+  <AnimatedCard className="rounded-3xl overflow-hidden shadow-md hover:scale-105 hover:shadow-2xl group relative">
+    <img
+      src={category.image}
+      alt={category.name}
+      className="w-full h-48 sm:h-56 md:h-60 object-cover transition-transform duration-700 group-hover:scale-110"
+    />
+    <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-center justify-center">
+      <h3 className="text-white text-xl sm:text-2xl font-extrabold text-center drop-shadow-lg tracking-wide">
+        {category.name}
+      </h3>
+    </div>
+  </AnimatedCard>
+);
 
 const Home = () => {
   return (
@@ -103,8 +109,7 @@ const Home = () => {
       className="w-full flex flex-col overflow-hidden bg-white"
       style={{ fontFamily: "'Poppins', sans-serif" }}
     >
-      {/* Hero Section */}
-      <div className="relative w-full h-screen">
+      <div className="relative w-full min-h-[70vh] sm:h-screen">
         <video
           className="absolute top-0 left-0 w-full h-full object-cover"
           src="/video.mp4"
@@ -114,63 +119,69 @@ const Home = () => {
         />
         <div className="absolute top-0 left-0 w-full h-full bg-black/50"></div>
 
-        <div className="relative z-10 flex flex-col justify-center items-center text-center h-full px-6">
-          <h1 className="text-5xl md:text-6xl font-extrabold text-white mb-6">
+        <div className="relative z-10 flex flex-col justify-center items-center text-center h-full px-4 sm:px-6">
+          <h1 className="text-2xl xs:text-3xl sm:text-5xl md:text-6xl font-extrabold text-white mb-3 xs:mb-4 sm:mb-6 leading-snug">
             ZamoraGG <span className="text-blue-400">Food Delivery</span>
           </h1>
-          <p className="text-lg md:text-xl text-white mb-12 max-w-2xl mx-auto">
+          <p className="text-xs xs:text-sm sm:text-lg md:text-xl text-white mb-4 xs:mb-6 sm:mb-12 max-w-[90%] xs:max-w-sm sm:max-w-xl md:max-w-2xl mx-auto leading-relaxed">
             Order your favorite meals, track deliveries in real-time, and enjoy
             fresh food right at your doorstep.
           </p>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-8 max-w-5xl mx-auto">
-            <div className="bg-white p-8 rounded-2xl flex flex-col items-center text-center shadow-lg hover:shadow-2xl transition">
-              <Utensils className="w-14 h-14 text-blue-600 mb-4" />
-              <h3 className="text-2xl font-bold text-gray-800 mb-2">
-                Restaurants
-              </h3>
-              <p className="text-gray-600 text-md">
-                Browse and discover the best local restaurants.
-              </p>
-            </div>
-            <div className="bg-white p-8 rounded-2xl flex flex-col items-center text-center shadow-lg hover:shadow-2xl transition">
-              <ShoppingBag className="w-14 h-14 text-blue-600 mb-4" />
-              <h3 className="text-2xl font-bold text-gray-800 mb-2">Orders</h3>
-              <p className="text-gray-600 text-md">
-                Place your orders easily and track in real-time.
-              </p>
-            </div>
-            <div className="bg-white p-8 rounded-2xl flex flex-col items-center text-center shadow-lg hover:shadow-2xl transition">
-              <Bike className="w-14 h-14 text-blue-600 mb-4" />
-              <h3 className="text-2xl font-bold text-gray-800 mb-2">
-                Delivery
-              </h3>
-              <p className="text-gray-600 text-md">
-                Fast and reliable delivery service to your door.
-              </p>
-            </div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-6 max-w-full sm:max-w-4xl mx-auto -mt-12 sm:-mt-10 mb-16 sm:mb-24">
+            {[
+              {
+                icon: (
+                  <Utensils className="w-10 h-10 sm:w-14 sm:h-14 text-blue-600 mb-2" />
+                ),
+                title: "Restaurants",
+                desc: "Browse and discover the best local restaurants.",
+              },
+              {
+                icon: (
+                  <ShoppingBag className="w-10 h-10 sm:w-14 sm:h-14 text-blue-600 mb-2" />
+                ),
+                title: "Orders",
+                desc: "Place your orders easily and track in real-time.",
+              },
+              {
+                icon: (
+                  <Bike className="w-10 h-10 sm:w-14 sm:h-14 text-blue-600 mb-2" />
+                ),
+                title: "Delivery",
+                desc: "Fast and reliable delivery service to your door.",
+              },
+            ].map((item, idx) => (
+              <AnimatedCard
+                key={idx}
+                className="bg-white p-4 sm:p-6 rounded-2xl flex flex-col items-center text-center shadow-md hover:shadow-2xl transition"
+              >
+                {item.icon}
+                <h3 className="text-sm sm:text-2xl font-bold text-gray-800 mb-2">
+                  {item.title}
+                </h3>
+                <p className="text-xs sm:text-sm text-gray-600">{item.desc}</p>
+              </AnimatedCard>
+            ))}
           </div>
         </div>
       </div>
-
-      {/* Categories Section */}
-      <div className="w-full py-24 bg-gray-50">
-        <h2 className="text-4xl font-extrabold text-center mb-12 text-gray-900 transition-all duration-700 ease-in-out transform hover:scale-105">
+      <div className="w-full py-16 sm:py-24 bg-gray-50">
+        <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-center mb-8 sm:mb-12 text-gray-900">
           Explore <span className="text-blue-600">Categories</span>
         </h2>
-        <div className="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-3 gap-10 px-6">
+        <div className="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-6 sm:gap-8 px-4 sm:px-6">
           {categories.map((category) => (
             <CategoryCard key={category.id} category={category} />
           ))}
         </div>
       </div>
 
-      {/* Culinary Inspiration Section */}
-      <div className="w-full py-20 bg-gradient-to-r from-blue-50 to-white">
-        <h2 className="text-4xl md:text-4xl font-extrabold text-center mb-16 text-gray-900 transition-all duration-700 ease-in-out transform hover:scale-105">
+      <div className="w-full py-16 sm:py-20 bg-gradient-to-r from-blue-50 to-white">
+        <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-center mb-12 text-gray-900">
           Various <span className="text-blue-600">Delicious Cuisines</span>
         </h2>
-        <div className="max-w-7xl mx-auto grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-12 px-8">
+        <div className="max-w-7xl mx-auto grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4 sm:gap-6 px-4 sm:px-8">
           {[
             {
               name: "Martabak",
@@ -203,31 +214,30 @@ const Home = () => {
                 "https://i.pinimg.com/1200x/d5/d4/bb/d5d4bb7e8a83e3cc20f3383e4ca3e5c7.jpg",
             },
           ].map((item, idx) => (
-            <div
+            <AnimatedCard
               key={idx}
-              className="flex flex-col items-center text-center transition-all duration-700 ease-in-out transform hover:-translate-y-2 hover:scale-110"
+              className="flex flex-col items-center text-center transition-all duration-700 ease-in-out transform hover:-translate-y-1 hover:scale-105"
             >
-              <div className="w-32 h-32 rounded-full overflow-hidden shadow-xl mb-6">
+              <div className="w-20 sm:w-24 md:w-32 h-20 sm:h-24 md:h-32 rounded-full overflow-hidden shadow-xl mb-2 sm:mb-4">
                 <img
                   src={item.image}
                   alt={item.name}
                   className="w-full h-full object-cover"
                 />
               </div>
-              <p className="text-gray-800 font-bold text-lg md:text-xl">
+              <p className="text-xs sm:text-sm md:text-lg font-bold text-gray-800">
                 {item.name}
               </p>
-            </div>
+            </AnimatedCard>
           ))}
         </div>
       </div>
 
-      {/* Inspiration Section */}
-      <div className="w-full py-24 bg-white">
-        <h2 className="text-4xl md:text-4xl font-extrabold text-center mb-16 text-gray-900 transition-all duration-700 ease-in-out transform hover:scale-105">
+      <div className="w-full py-16 sm:py-20 bg-white">
+        <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-center mb-12 text-gray-900">
           Discover <span className="text-blue-600">Popular Picks</span>
-        </h2>{" "}
-        <div className="max-w-7xl mx-auto grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-8 px-8">
+        </h2>
+        <div className="max-w-7xl mx-auto grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-4 sm:gap-6 px-4 sm:px-8">
           {[
             {
               name: "Best Sellers",
@@ -260,27 +270,28 @@ const Home = () => {
                 "https://i.gojekapi.com/darkroom/gofood-id/v2/images/uploads/9550dc29-2fbb-4734-90e0-40b91a847549_gofood_categories_lebaran_healthy_food.png?auto=format",
             },
           ].map((item, idx) => (
-            <div
+            <AnimatedCard
               key={idx}
-              className="bg-gray-50 rounded-2xl shadow-md hover:shadow-xl p-8 flex flex-col items-center justify-center text-center transition-all duration-500 ease-in-out transform hover:-translate-y-2 hover:scale-110"
+              className="bg-gray-50 rounded-2xl shadow-md hover:shadow-xl p-4 sm:p-6 flex flex-col items-center justify-center text-center transition-all duration-500 ease-in-out transform hover:-translate-y-1 hover:scale-105"
             >
               <img
                 src={item.image}
                 alt={item.name}
-                className="w-16 h-16 mb-4 transition-transform duration-500 ease-in-out group-hover:rotate-6"
+                className="w-12 sm:w-16 h-12 sm:h-16 mb-2 sm:mb-4"
               />
-              <p className="text-gray-800 font-bold text-lg">{item.name}</p>
-            </div>
+              <p className="text-xs sm:text-sm md:text-lg font-bold text-gray-800">
+                {item.name}
+              </p>
+            </AnimatedCard>
           ))}
         </div>
       </div>
 
-      {/* Why Choose Us */}
-      <div className="w-full py-20 bg-gray-50">
-        <h2 className="text-3xl md:text-4xl font-extrabold text-center mb-12 text-gray-900 transition-all duration-700 ease-in-out transform hover:scale-105">
+      <div className="w-full py-16 sm:py-20 bg-gray-50">
+        <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-center mb-12 text-gray-900">
           Why <span className="text-blue-600">Choose ZamoraGG?</span>
         </h2>
-        <div className="max-w-6xl mx-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8 px-6">
+        <div className="max-w-6xl mx-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 px-4 sm:px-6">
           {[
             {
               title: "20,000+ Reviews",
@@ -303,30 +314,29 @@ const Home = () => {
               image: "https://cdn-icons-png.flaticon.com/512/633/633597.png",
             },
           ].map((item, idx) => (
-            <div
+            <AnimatedCard
               key={idx}
-              className="bg-white rounded-2xl p-8 shadow-md hover:shadow-xl transition transform hover:-translate-y-2 text-center"
+              className="bg-white rounded-2xl p-4 sm:p-6 shadow-md hover:shadow-xl transition transform hover:-translate-y-1 text-center"
             >
               <img
                 src={item.image}
                 alt={item.title}
-                className="w-14 h-14 mx-auto mb-4"
+                className="w-10 sm:w-14 h-10 sm:h-14 mx-auto mb-2 sm:mb-4"
               />
-              <h3 className="text-xl font-bold mb-3 text-gray-900">
+              <h3 className="text-sm sm:text-lg md:text-xl font-bold mb-1 sm:mb-2 text-gray-900">
                 {item.title}
               </h3>
-              <p className="text-sm text-gray-600">{item.desc}</p>
-            </div>
+              <p className="text-xs sm:text-sm text-gray-600">{item.desc}</p>
+            </AnimatedCard>
           ))}
         </div>
       </div>
 
-      {/* How It Works */}
-      <div className="w-full py-28 bg-white">
-        <h2 className="text-4xl font-extrabold text-center mb-16 text-gray-900 transition-all duration-700 ease-in-out transform hover:scale-105">
+      <div className="w-full py-16 sm:py-28 bg-white">
+        <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-center mb-12 text-gray-900">
           How It <span className="text-blue-600">Works</span>
         </h2>
-        <div className="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-12 px-6 text-center">
+        <div className="max-w-5xl mx-auto grid grid-cols-1 sm:grid-cols-3 gap-6 sm:gap-12 px-4 sm:px-6 text-center">
           {[
             {
               step: "1",
@@ -344,18 +354,18 @@ const Home = () => {
               desc: "Our couriers deliver fast, fresh, and safe to your door.",
             },
           ].map((item, idx) => (
-            <div
+            <AnimatedCard
               key={idx}
-              className="transition transform hover:-translate-y-2 hover:scale-105"
+              className="transition transform hover:-translate-y-1 hover:scale-105"
             >
-              <div className="w-20 h-20 bg-blue-600 text-white flex items-center justify-center rounded-full mx-auto mb-6 text-2xl font-bold shadow-lg">
+              <div className="w-16 sm:w-20 h-16 sm:h-20 bg-blue-600 text-white flex items-center justify-center rounded-full mx-auto mb-2 sm:mb-4 text-xl sm:text-2xl font-bold shadow-lg">
                 {item.step}
               </div>
-              <h3 className="text-2xl font-semibold mb-3 text-gray-900">
+              <h3 className="text-sm sm:text-2xl font-semibold mb-1 sm:mb-2 text-gray-900">
                 {item.title}
               </h3>
-              <p className="text-gray-600">{item.desc}</p>
-            </div>
+              <p className="text-xs sm:text-sm text-gray-600">{item.desc}</p>
+            </AnimatedCard>
           ))}
         </div>
       </div>

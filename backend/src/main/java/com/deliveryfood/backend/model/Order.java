@@ -3,19 +3,10 @@ package com.deliveryfood.backend.model;
 import java.time.Instant;
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-import jakarta.persistence.CascadeType;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.OneToMany;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.Data;
 
 @Entity
@@ -26,6 +17,7 @@ public class Order {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    // siapa customer yang buat order
     @ManyToOne
     @JoinColumn(name = "customer_id", referencedColumnName = "id")
     private User customer;
@@ -37,8 +29,12 @@ public class Order {
     private Double deliveryFee;
     private Instant createdAt = Instant.now();
 
-    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<OrderItem> items;
+
+    @OneToOne(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
+    @JsonIgnoreProperties("order")
+    private CourierAssignment courierAssignment;
 
     public enum Status {
         PENDING,
@@ -52,5 +48,4 @@ public class Order {
     public String getCustomerName() {
         return customer != null ? customer.getName() : null;
     }
-
 }

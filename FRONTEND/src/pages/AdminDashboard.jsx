@@ -1,3 +1,4 @@
+// AdminDashboard.jsx
 import React from "react";
 import { Link } from "react-router-dom";
 import { Users, Coffee, List, Package, ClipboardList } from "lucide-react";
@@ -32,31 +33,33 @@ const AdminDashboard = () => {
       title: "Revenue Reports",
       description: "View all incoming orders and revenue data.",
       icon: <ClipboardList className="w-6 h-6 text-blue-600" />,
-      link: "/admin/orders",
+      link: "/admin/reports",
     },
   ];
 
   return (
     <div>
-      <h1 className="text-3xl font-bold text-blue-800 mb-6">
+      <h1 className="text-2xl md:text-3xl font-bold text-blue-800 mb-6">
         Manage Your Platform
       </h1>
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
         {cards.map((card) => (
           <div
             key={card.title}
-            className="bg-white p-6 rounded-xl shadow-sm hover:shadow-md transition-all duration-300 flex flex-col justify-between"
+            className="bg-white p-4 md:p-6 rounded-xl shadow-sm hover:shadow-md transition-all duration-300 flex flex-col justify-between"
           >
-            <div className="flex items-center gap-3 mb-4">
+            <div className="flex items-center gap-3 mb-3 md:mb-4">
               {card.icon}
-              <h2 className="font-semibold text-lg text-gray-800">
+              <h2 className="font-semibold text-base md:text-lg text-gray-800">
                 {card.title}
               </h2>
             </div>
-            <p className="text-gray-600 flex-1">{card.description}</p>
+            <p className="text-sm md:text-base text-gray-600 flex-1">
+              {card.description}
+            </p>
             <Link
               to={card.link}
-              className="mt-4 inline-block text-blue-700 font-semibold hover:underline"
+              className="mt-3 md:mt-4 inline-block text-blue-700 font-semibold hover:underline text-sm md:text-base"
             >
               Go
             </Link>

@@ -25,12 +25,15 @@ public class OrderController {
     @Autowired
     private MenuRepository menuRepository;
 
-  @PostMapping("/create")
+    @Autowired
+    private CourierAssignmentRepository courierAssignmentRepository;
+
+    // ================= CREATE ORDER =================
+    @PostMapping("/create")
     public Map<String, Object> createOrder(@RequestBody Order order) {
         Map<String, Object> response = new LinkedHashMap<>();
 
         try {
-            // ✅ Validasi customer
             if (order.getCustomer() == null || order.getCustomer().getId() == null) {
                 response.put("message", "Customer is required");
                 response.put("data", null);
@@ -45,20 +48,17 @@ public class OrderController {
             }
             order.setCustomer(customer);
 
-            // ✅ Ambil alamat dari user langsung
             if (customer.getStreet() == null || customer.getCity() == null || customer.getPostalCode() == null) {
                 response.put("message", "Customer address is incomplete. Please update your address.");
                 response.put("data", null);
                 return response;
             }
 
-            // Simpan order kosong dulu biar dapat ID
             Order savedOrder = orderRepository.save(order);
 
             double subtotal = 0.0;
             Set<Long> restoIds = new HashSet<>();
 
-            // ✅ Proses item
             if (order.getItems() != null) {
                 for (OrderItem item : order.getItems()) {
                     if (item.getMenu() != null && item.getMenu().getId() != null) {
@@ -83,26 +83,19 @@ public class OrderController {
                 }
             }
 
-            // ✅ Hitung ongkir: 5rb + (resto - 1) * 2rb
-            double deliveryFee = 0.0;
-            if (!restoIds.isEmpty()) {
-                deliveryFee = 5000 + (restoIds.size() - 1) * 2000;
-            }
+            double deliveryFee = !restoIds.isEmpty() ? 5000 + (restoIds.size() - 1) * 2000 : 0.0;
 
             savedOrder.setDeliveryFee(deliveryFee);
             savedOrder.setTotalPrice(subtotal + deliveryFee);
-
             savedOrder = orderRepository.save(savedOrder);
 
-            // ✅ Sertakan info alamat customer di response (tanpa field baru di Order)
             Map<String, Object> dataWithAddress = new LinkedHashMap<>();
             dataWithAddress.put("order", savedOrder);
             dataWithAddress.put("address", Map.of(
                     "street", customer.getStreet(),
                     "city", customer.getCity(),
                     "postalCode", customer.getPostalCode(),
-                    "phone", customer.getPhone()
-            ));
+                    "phone", customer.getPhone()));
 
             response.put("message", "Order successfully created");
             response.put("data", dataWithAddress);
@@ -114,6 +107,7 @@ public class OrderController {
 
         return response;
     }
+
     @GetMapping("/get")
     public Map<String, Object> getAllOrders() {
         Map<String, Object> response = new LinkedHashMap<>();
@@ -158,7 +152,6 @@ public class OrderController {
             }
 
             Order updated = orderRepository.save(existing);
-
             response.put("message", "Order with ID " + id + " successfully updated");
             response.put("data", updated);
         }
@@ -181,6 +174,40 @@ public class OrderController {
         return response;
     }
 
+    // ================= ASSIGN COURIER =================
+    @PostMapping("/{orderId}/assign/{courierId}")
+    public Map<String, Object> assignCourier(@PathVariable Long orderId, @PathVariable Long courierId) {
+        Map<String, Object> response = new LinkedHashMap<>();
+
+        Order order = orderRepository.findById(orderId).orElse(null);
+        User courier = userRepository.findById(courierId).orElse(null);
+
+        if (order == null) {
+            response.put("message", "Order not found");
+            response.put("data", null);
+            return response;
+        }
+        if (courier == null || courier.getRole() != User.Role.COURIER) {
+            response.put("message", "Courier not found or invalid");
+            response.put("data", null);
+            return response;
+        }
+
+        CourierAssignment assignment = new CourierAssignment();
+        assignment.setOrder(order);
+        assignment.setCourier(courier);
+
+        order.setCourierAssignment(assignment);
+
+        courierAssignmentRepository.save(assignment);
+        orderRepository.save(order); 
+
+        response.put("message", "Courier assigned successfully");
+        response.put("data", assignment);
+        return response;
+    }
+
+    // ================= CUSTOMER HISTORY =================
     @GetMapping("/customer/{customerId}/history")
     public Map<String, Object> getCustomerOrderHistory(@PathVariable Long customerId) {
         Map<String, Object> response = new LinkedHashMap<>();
@@ -192,15 +219,33 @@ public class OrderController {
             return response;
         }
 
-        List<Order> orders = orderRepository.findByCustomerId(customerId); // pastikan repository ada
-        // urutkan dari terbaru
+        List<Order> orders = orderRepository.findByCustomerId(customerId);
         orders.sort((o1, o2) -> o2.getCreatedAt().compareTo(o1.getCreatedAt()));
 
+        List<Map<String, Object>> orderResponses = orders.stream().map(order -> {
+            Map<String, Object> map = new LinkedHashMap<>();
+            map.put("id", order.getId());
+            map.put("status", order.getStatus());
+            map.put("createdAt", order.getCreatedAt());
+            map.put("totalPrice", order.getTotalPrice());
+            map.put("deliveryFee", order.getDeliveryFee());
+            map.put("items", order.getItems());
+
+            String courierName = null;
+            if (order.getCourierAssignment() != null && order.getCourierAssignment().getCourier() != null) {
+                courierName = order.getCourierAssignment().getCourier().getName();
+            }
+            map.put("courierName", courierName);
+
+            return map;
+        }).collect(Collectors.toList());
+
         response.put("message", "Order history retrieved successfully");
-        response.put("data", orders);
+        response.put("data", orderResponses);
         return response;
     }
 
+    // ================= REPORT =================
     @GetMapping("/reports")
     public Map<String, Object> getRevenueReport(@RequestParam(defaultValue = "daily") String type) {
         Map<String, Object> response = new LinkedHashMap<>();
@@ -212,10 +257,7 @@ public class OrderController {
             case "daily":
                 report = allOrders.stream()
                         .collect(Collectors.groupingBy(
-                                o -> o.getCreatedAt()
-                                        .atZone(java.time.ZoneId.systemDefault())
-                                        .toLocalDate()
-                                        .toString(),
+                                o -> o.getCreatedAt().atZone(java.time.ZoneId.systemDefault()).toLocalDate().toString(),
                                 TreeMap::new,
                                 Collectors.summingDouble(Order::getTotalPrice)));
                 response.put("type", "daily");
@@ -225,9 +267,7 @@ public class OrderController {
                 report = allOrders.stream()
                         .collect(Collectors.groupingBy(
                                 o -> {
-                                    var date = o.getCreatedAt()
-                                            .atZone(java.time.ZoneId.systemDefault())
-                                            .toLocalDate();
+                                    var date = o.getCreatedAt().atZone(java.time.ZoneId.systemDefault()).toLocalDate();
                                     return date.getYear() + "-" + String.format("%02d", date.getMonthValue());
                                 },
                                 TreeMap::new,
@@ -238,8 +278,8 @@ public class OrderController {
             case "yearly":
                 report = allOrders.stream()
                         .collect(Collectors.groupingBy(
-                                o -> String.valueOf(
-                                        o.getCreatedAt().atZone(java.time.ZoneId.systemDefault()).getYear()),
+                                o -> String
+                                        .valueOf(o.getCreatedAt().atZone(java.time.ZoneId.systemDefault()).getYear()),
                                 TreeMap::new,
                                 Collectors.summingDouble(Order::getTotalPrice)));
                 response.put("type", "yearly");
@@ -256,4 +296,5 @@ public class OrderController {
 
         return response;
     }
+
 }

@@ -27,15 +27,15 @@ public class User {
     @Enumerated(EnumType.STRING)
     private Role role;
 
-    // Field alamat langsung di user
     private String street;
     private String city;
     private String postalCode;
     private String phone;
 
     @OneToMany(mappedBy = "courier")
-    @JsonIgnore // supaya Jackson tidak looping saat serialisasi JSON
+    @JsonIgnore 
     private List<CourierAssignment> assignments;
+
 
     public List<CourierAssignment> getAssignments() {
         return assignments;

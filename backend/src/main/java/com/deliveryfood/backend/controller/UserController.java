@@ -63,7 +63,6 @@ public class UserController {
         return ResponseEntity.ok(Map.of("message", "Courier registered successfully!"));
     }
 
-    // Edit kurir
     @PutMapping("/courier/{adminId}/{courierId}")
     public ResponseEntity<?> editCourier(
             @PathVariable Long adminId,
@@ -93,7 +92,6 @@ public class UserController {
         return ResponseEntity.ok(Map.of("message", "Courier updated successfully!"));
     }
 
-    // Delete kurir
     @DeleteMapping("/courier/{adminId}/{courierId}")
     public ResponseEntity<?> deleteCourier(
             @PathVariable Long adminId,
@@ -124,7 +122,7 @@ public class UserController {
             response.put("message", "Login successful");
             response.put("role", user.get().getRole());
             response.put("email", user.get().getEmail());
-            response.put("id", user.get().getId()); // <--- tambahkan ini
+            response.put("id", user.get().getId()); 
 
             return ResponseEntity.ok(response);
         }
@@ -133,7 +131,6 @@ public class UserController {
                 .body(Map.of("message", "Invalid email or password!"));
     }
 
-    // Update alamat user
     @PutMapping("/{userId}/address")
     public ResponseEntity<?> updateAddress(
             @PathVariable Long userId,

@@ -9,10 +9,11 @@ import {
   Package,
   ClipboardList,
   LogOut,
+  X,
 } from "lucide-react";
 
 const AdminLayout = () => {
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const navigate = useNavigate();
 
   const handleLogout = () => {
@@ -31,22 +32,30 @@ const AdminLayout = () => {
 
   return (
     <div className="flex min-h-screen bg-gray-50">
+      {/* Sidebar Overlay (Mobile) */}
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-40 z-30 md:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
       {/* Sidebar */}
       <aside
-        className={`${
-          sidebarOpen ? "w-64" : "w-20"
-        } bg-gradient-to-b from-blue-200 to-blue-400 text-white transition-all duration-500 flex flex-col rounded-tr-xl rounded-br-xl shadow-sm relative`}
+        className={`fixed md:static inset-y-0 left-0 z-40 transform ${
+          sidebarOpen ? "translate-x-0" : "-translate-x-full"
+        } md:translate-x-0 w-64 bg-gradient-to-b from-blue-200 to-blue-400 text-white transition-transform duration-300 flex flex-col rounded-tr-xl md:rounded-tr-none rounded-br-xl md:rounded-br-none shadow-sm`}
       >
         {/* Sidebar Header */}
         <div className="flex items-center justify-between p-4 border-b border-blue-300">
-          <span className={`${sidebarOpen ? "text-xl font-bold text-gray-900" : "hidden"} select-none`}>
+          <span className="text-xl font-bold text-gray-900 select-none">
             Admin Panel
           </span>
           <button
-            className="p-1 rounded hover:bg-blue-300 transition-colors"
-            onClick={() => setSidebarOpen(!sidebarOpen)}
+            className="p-1 rounded hover:bg-blue-300 transition-colors md:hidden"
+            onClick={() => setSidebarOpen(false)}
           >
-            <Menu className="w-6 h-6 text-gray-900" />
+            <X className="w-6 h-6 text-gray-900" />
           </button>
         </div>
 
@@ -56,12 +65,11 @@ const AdminLayout = () => {
             <Link
               key={item.name}
               to={item.path}
-              className={`flex items-center gap-3 p-3 rounded-lg transition-all duration-300 hover:bg-blue-300 hover:shadow-sm text-gray-900`}
+              className="flex items-center gap-3 p-3 rounded-lg transition-all duration-300 hover:bg-blue-300 hover:shadow-sm text-gray-900"
+              onClick={() => setSidebarOpen(false)}
             >
               {item.icon}
-              <span className={`${sidebarOpen ? "inline" : "hidden"} font-medium`}>
-                {item.name}
-              </span>
+              <span className="font-medium">{item.name}</span>
             </Link>
           ))}
         </nav>
@@ -69,19 +77,28 @@ const AdminLayout = () => {
         {/* Logout Button */}
         <button
           onClick={handleLogout}
-          className="absolute bottom-4 left-4 right-4 flex items-center gap-2 p-3 bg-red-400 hover:bg-red-500 rounded-lg transition-all duration-300 shadow-sm"
+          className="m-4 flex items-center gap-2 p-3 bg-red-400 hover:bg-red-500 rounded-lg transition-all duration-300 shadow-sm"
         >
           <LogOut className="w-5 h-5 text-white" />
-          <span className={`${sidebarOpen ? "inline" : "hidden"} font-medium text-white`}>
-            Logout
-          </span>
+          <span className="font-medium text-white">Logout</span>
         </button>
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 p-6 bg-gray-50 transition-all duration-500">
-        <Outlet />
-      </main>
+      <div className="flex-1 flex flex-col">
+        {/* Top Navbar (Mobile) */}
+        <header className="md:hidden flex items-center justify-between p-4 bg-white shadow-sm">
+          <button onClick={() => setSidebarOpen(true)}>
+            <Menu className="w-6 h-6 text-gray-800" />
+          </button>
+          <h1 className="text-lg font-semibold text-gray-800">Admin Panel</h1>
+          <div className="w-6 h-6" /> {/* Spacer */}
+        </header>
+
+        <main className="flex-1 p-4 md:p-6 bg-gray-50 transition-all duration-500">
+          <Outlet />
+        </main>
+      </div>
     </div>
   );
 };

@@ -26,7 +26,6 @@ public class CourierAssignmentController {
     @Autowired
     private UserRepository userRepository;
 
-    // === Assign courier to order ===
     @PostMapping("/assign/{orderId}/{courierId}")
     @Transactional
     public Map<String, Object> assignCourier(@PathVariable Long orderId, @PathVariable Long courierId) {
@@ -51,7 +50,6 @@ public class CourierAssignmentController {
                 return response;
             }
 
-            // Cegah duplicate assignment
             List<CourierAssignment> existing = courierAssignmentRepository.findByOrder(order);
             if (!existing.isEmpty()) {
                 response.put("message", "Order already has a courier assigned!");
@@ -59,7 +57,6 @@ public class CourierAssignmentController {
                 return response;
             }
 
-            // Assign courier
             CourierAssignment assignment = new CourierAssignment();
             assignment.setOrder(order);
             assignment.setCourier(courier);
@@ -67,7 +64,6 @@ public class CourierAssignmentController {
 
             CourierAssignment saved = courierAssignmentRepository.save(assignment);
 
-            // Update order status
             order.setStatus(Order.Status.ASSIGNED);
             orderRepository.save(order);
 
@@ -81,53 +77,52 @@ public class CourierAssignmentController {
         return response;
     }
 
-    // === Get all unassigned orders ===
-@GetMapping("/unassigned-orders")
-public Map<String, Object> getUnassignedOrders() {
-    Map<String, Object> response = new LinkedHashMap<>();
-    List<Order> allOrders = orderRepository.findAll();
-    List<Map<String, Object>> unassigned = new ArrayList<>();
+    @GetMapping("/unassigned-orders")
+    public Map<String, Object> getUnassignedOrders() {
+        Map<String, Object> response = new LinkedHashMap<>();
+        List<Order> allOrders = orderRepository.findAll();
+        List<Map<String, Object>> unassigned = new ArrayList<>();
 
-    for (Order o : allOrders) {
-        List<CourierAssignment> assignments = courierAssignmentRepository.findByOrder(o);
-        if (assignments.isEmpty()) {
-            Map<String, Object> orderData = new HashMap<>();
-            orderData.put("order", o);
+        for (Order o : allOrders) {
+            List<CourierAssignment> assignments = courierAssignmentRepository.findByOrder(o);
+            if (assignments.isEmpty()) {
+                Map<String, Object> orderData = new HashMap<>();
+                orderData.put("id", o.getId());
+                orderData.put("status", o.getStatus());
+                orderData.put("totalPrice", o.getTotalPrice());
+                orderData.put("createdAt", o.getCreatedAt());
 
-            // join ke customer
-            User customer = o.getCustomer();
-            if (customer != null) {
-orderData.put("customerName", customer.getName());
-orderData.put("customerStreet", customer.getStreet());
-orderData.put("customerCity", customer.getCity());
-orderData.put("customerPostalCode", customer.getPostalCode());
-orderData.put("customerPhone", customer.getPhone());
+                User customer = o.getCustomer();
+                if (customer != null) {
+                    orderData.put("customerName", customer.getName());
+                    orderData.put("customerStreet", customer.getStreet());
+                    orderData.put("customerCity", customer.getCity());
+                    orderData.put("customerPostalCode", customer.getPostalCode());
+                    orderData.put("customerPhone", customer.getPhone());
+                }
+
+                unassigned.add(orderData);
             }
-
-            unassigned.add(orderData);
         }
+
+        response.put("message", "Unassigned orders retrieved successfully");
+        response.put("data", unassigned);
+        return response;
     }
 
-    response.put("message", "Unassigned orders retrieved successfully");
-    response.put("data", unassigned);
-    return response;
-}
-
-    // === Get all available couriers (no current assignment) ===
     @GetMapping("/available-couriers")
     public Map<String, Object> getAvailableCouriers() {
         Map<String, Object> response = new LinkedHashMap<>();
 
-        // semua user dengan role COURIER
         List<User> couriers = userRepository.findByRole(User.Role.COURIER);
 
-        // filter yang belum ada assignment aktif (status ASSIGNED atau ON_DELIVERY)
         List<User> available = new ArrayList<>();
         for (User c : couriers) {
             boolean busy = c.getAssignments().stream()
                     .anyMatch(a -> a.getOrder().getStatus() == Order.Status.ASSIGNED
-                                || a.getOrder().getStatus() == Order.Status.ON_DELIVERY);
-            if (!busy) available.add(c);
+                            || a.getOrder().getStatus() == Order.Status.ON_DELIVERY);
+            if (!busy)
+                available.add(c);
         }
 
         response.put("message", "Available couriers retrieved successfully");
@@ -135,127 +130,120 @@ orderData.put("customerPhone", customer.getPhone());
         return response;
     }
 
-@GetMapping("/courier-orders/{courierId}")
-public Map<String, Object> getOrdersForCourier(@PathVariable Long courierId) {
-    Map<String, Object> response = new LinkedHashMap<>();
+    @GetMapping("/courier-orders/{courierId}")
+    public Map<String, Object> getOrdersForCourier(@PathVariable Long courierId) {
+        Map<String, Object> response = new LinkedHashMap<>();
 
-    Optional<User> courierOpt = userRepository.findById(courierId);
-    if (courierOpt.isEmpty() || courierOpt.get().getRole() != User.Role.COURIER) {
-        response.put("message", "Courier not found");
-        response.put("data", null);
-        return response;
-    }
-
-    List<CourierAssignment> assignments = courierAssignmentRepository.findByCourier(courierOpt.get());
-    List<Map<String, Object>> orders = new ArrayList<>();
-
-    for (CourierAssignment a : assignments) {
-        Order o = a.getOrder();
-        Map<String, Object> orderData = new HashMap<>();
-        orderData.put("id", o.getId());
-        orderData.put("status", o.getStatus());
-        orderData.put("totalPrice", o.getTotalPrice());
-        orderData.put("createdAt", o.getCreatedAt());
-
-        User customer = o.getCustomer();
-        if (customer != null) {
-            orderData.put("customerName", customer.getName());
-            orderData.put("customerStreet", customer.getStreet());
-            orderData.put("customerCity", customer.getCity());
-            orderData.put("customerPostalCode", customer.getPostalCode());
-            orderData.put("customerPhone", customer.getPhone());
+        Optional<User> courierOpt = userRepository.findById(courierId);
+        if (courierOpt.isEmpty() || courierOpt.get().getRole() != User.Role.COURIER) {
+            response.put("message", "Courier not found");
+            response.put("data", null);
+            return response;
         }
 
-        orders.add(orderData);
-    }
+        List<CourierAssignment> assignments = courierAssignmentRepository.findByCourier(courierOpt.get());
+        List<Map<String, Object>> orders = new ArrayList<>();
 
-    response.put("message", "Orders for courier retrieved");
-    response.put("data", orders);
-    return response;
-}
+        for (CourierAssignment a : assignments) {
+            Order o = a.getOrder();
+            Map<String, Object> orderData = new HashMap<>();
+            orderData.put("id", o.getId());
+            orderData.put("status", o.getStatus());
+            orderData.put("totalPrice", o.getTotalPrice());
+            orderData.put("createdAt", o.getCreatedAt());
 
-// === Update order status (by courier) ===
-@PutMapping("/update-status/{orderId}/{courierId}")
-@Transactional
-public Map<String, Object> updateOrderStatus(
-        @PathVariable Long orderId,
-        @PathVariable Long courierId,
-        @RequestParam("status") Order.Status status) {
+            User customer = o.getCustomer();
+            if (customer != null) {
+                orderData.put("customerName", customer.getName());
+                orderData.put("customerStreet", customer.getStreet());
+                orderData.put("customerCity", customer.getCity());
+                orderData.put("customerPostalCode", customer.getPostalCode());
+                orderData.put("customerPhone", customer.getPhone());
+            }
 
-    Map<String, Object> response = new LinkedHashMap<>();
+            orders.add(orderData);
+        }
 
-    Optional<Order> orderOpt = orderRepository.findById(orderId);
-    Optional<User> courierOpt = userRepository.findById(courierId);
-
-    if (orderOpt.isEmpty() || courierOpt.isEmpty()) {
-        response.put("message", "Order or courier not found");
-        response.put("data", null);
+        response.put("message", "Orders for courier retrieved");
+        response.put("data", orders);
         return response;
     }
 
-    Order order = orderOpt.get();
-    // User courier = courierOpt.get();
+    @PutMapping("/update-status/{orderId}/{courierId}")
+    @Transactional
+    public Map<String, Object> updateOrderStatus(
+            @PathVariable Long orderId,
+            @PathVariable Long courierId,
+            @RequestParam("status") Order.Status status) {
 
-    // Pastikan order ini memang ditugaskan ke kurir ini
-    List<CourierAssignment> assignments = courierAssignmentRepository.findByOrder(order);
-    boolean assignedToCourier = assignments.stream()
-            .anyMatch(a -> a.getCourier().getId().equals(courierId));
+        Map<String, Object> response = new LinkedHashMap<>();
 
-    if (!assignedToCourier) {
-        response.put("message", "This order is not assigned to this courier");
-        response.put("data", null);
-        return response;
-    }
+        Optional<Order> orderOpt = orderRepository.findById(orderId);
+        Optional<User> courierOpt = userRepository.findById(courierId);
 
-    // Update status
-    order.setStatus(status);
-    orderRepository.save(order);
+        if (orderOpt.isEmpty() || courierOpt.isEmpty()) {
+            response.put("message", "Order or courier not found");
+            response.put("data", null);
+            return response;
+        }
 
-    response.put("message", "Order status updated successfully");
-    response.put("data", order);
-    return response;
-}
+        Order order = orderOpt.get();
 
-// === Update order status by courier ===
-@PutMapping("/update-status/{orderId}")
-public Map<String, Object> updateOrderStatus(
-        @PathVariable Long orderId,
-        @RequestBody Map<String, String> body) {
+        List<CourierAssignment> assignments = courierAssignmentRepository.findByOrder(order);
+        boolean assignedToCourier = assignments.stream()
+                .anyMatch(a -> a.getCourier().getId().equals(courierId));
 
-    Map<String, Object> response = new LinkedHashMap<>();
-    Optional<Order> orderOpt = orderRepository.findById(orderId);
+        if (!assignedToCourier) {
+            response.put("message", "This order is not assigned to this courier");
+            response.put("data", null);
+            return response;
+        }
 
-    if (orderOpt.isEmpty()) {
-        response.put("message", "Order not found");
-        response.put("data", null);
-        return response;
-    }
-
-    Order order = orderOpt.get();
-    String newStatus = body.get("status");
-    try {
-        order.setStatus(Order.Status.valueOf(newStatus));
+        order.setStatus(status);
         orderRepository.save(order);
+
         response.put("message", "Order status updated successfully");
         response.put("data", order);
-    } catch (Exception e) {
-        response.put("message", "Failed to update status: " + e.getMessage());
-        response.put("data", null);
+        return response;
     }
 
-    return response;
-}
+    @PutMapping("/update-status/{orderId}")
+    public Map<String, Object> updateOrderStatus(
+            @PathVariable Long orderId,
+            @RequestBody Map<String, String> body) {
 
-// Get all orders for a customer
-@GetMapping("/customer-orders/{customerId}")
-public Map<String, Object> getCustomerOrders(@PathVariable Long customerId) {
-    Map<String, Object> response = new LinkedHashMap<>();
+        Map<String, Object> response = new LinkedHashMap<>();
+        Optional<Order> orderOpt = orderRepository.findById(orderId);
 
-    List<Order> orders = orderRepository.findByCustomerId(customerId);
-    response.put("message", "Customer orders retrieved successfully");
-    response.put("data", orders);
-    return response;
-}
+        if (orderOpt.isEmpty()) {
+            response.put("message", "Order not found");
+            response.put("data", null);
+            return response;
+        }
 
+        Order order = orderOpt.get();
+        String newStatus = body.get("status");
+        try {
+            order.setStatus(Order.Status.valueOf(newStatus));
+            orderRepository.save(order);
+            response.put("message", "Order status updated successfully");
+            response.put("data", order);
+        } catch (Exception e) {
+            response.put("message", "Failed to update status: " + e.getMessage());
+            response.put("data", null);
+        }
+
+        return response;
+    }
+
+    @GetMapping("/customer-orders/{customerId}")
+    public Map<String, Object> getCustomerOrders(@PathVariable Long customerId) {
+        Map<String, Object> response = new LinkedHashMap<>();
+
+        List<Order> orders = orderRepository.findByCustomerId(customerId);
+        response.put("message", "Customer orders retrieved successfully");
+        response.put("data", orders);
+        return response;
+    }
 
 }

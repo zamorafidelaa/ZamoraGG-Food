@@ -9,11 +9,9 @@ import com.deliveryfood.backend.model.Restaurant;
 public interface RestaurantRepository extends JpaRepository<Restaurant, Long> {
     List<Restaurant> findByNameContainingIgnoreCaseOrAddressContainingIgnoreCase(String name, String address);
 
-    // Sorting ASC & DESC by Name
     List<Restaurant> findAllByOrderByNameAsc();
     List<Restaurant> findAllByOrderByNameDesc();
 
-    // Sorting ASC & DESC by Address
     List<Restaurant> findAllByOrderByAddressAsc();
     List<Restaurant> findAllByOrderByAddressDesc();
 }

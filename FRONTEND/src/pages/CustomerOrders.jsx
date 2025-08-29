@@ -107,6 +107,13 @@ const CustomerOrders = () => {
                   <p className="mt-1 font-bold">
                     Total: Rp {order.totalPrice?.toLocaleString("id-ID")}
                   </p>
+                  {/* Courier info */}
+{order.courierAssignment?.courier?.name && (
+  <p className="mt-2 text-sm text-gray-600">
+    Courier: <span className="font-medium">{order.courierAssignment.courier.name}</span>
+  </p>
+)}
+
                 </div>
               );
             })}
