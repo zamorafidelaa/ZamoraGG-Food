@@ -13,6 +13,8 @@ import {
   User,
 } from "lucide-react";
 
+const API_BASE = import.meta.env.VITE_API_BASE_URL;
+
 const Header = () => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -30,7 +32,7 @@ const Header = () => {
       return;
     }
     try {
-      const res = await fetch(`http://localhost:8080/cart/${userId}`);
+      const res = await fetch(`${API_BASE}/cart/${userId}`);
       const data = await res.json();
       const totalQty = data.reduce((sum, item) => sum + item.quantity, 0);
       setCartCount(totalQty);
@@ -86,23 +88,21 @@ const Header = () => {
 
   return (
     <header className="fixed top-0 left-0 w-full z-50 bg-white/70 backdrop-blur-md shadow-sm px-6 py-3 flex items-center justify-between">
-{/* Logo */}
-<div className="flex items-center font-extrabold text-blue-600">
-  <img
-    src="/ggfood.png"
-    alt="ZamoraGG Logo"
-    className="w-6 h-6 sm:w-7 sm:h-7 mr-1 sm:mr-2"
-  />
-<Link
-  to="/"
-  onClick={() => setActiveLink("/")}
-  className="text-base sm:text-lg md:text-2xl whitespace-nowrap"
->
-  ZamoraGG <span className="text-blue-400">Food</span>
-</Link>
-</div>
+      <div className="flex items-center font-extrabold text-blue-600">
+        <img
+          src="/ggfood.png"
+          alt="ZamoraGG Logo"
+          className="w-6 h-6 sm:w-7 sm:h-7 mr-1 sm:mr-2"
+        />
+        <Link
+          to="/"
+          onClick={() => setActiveLink("/")}
+          className="text-base sm:text-lg md:text-2xl whitespace-nowrap"
+        >
+          ZamoraGG <span className="text-blue-400">Food</span>
+        </Link>
+      </div>
 
-      {/* Desktop Nav */}
       <nav className="hidden md:flex items-center gap-4 mx-auto">
         {role === "CUSTOMER" && (
           <>
@@ -131,11 +131,9 @@ const Header = () => {
         )}
       </nav>
 
-      {/* Desktop Right */}
       <div className="hidden md:flex items-center gap-3 relative">
         {role === "CUSTOMER" && (
           <>
-            {/* Cart */}
             <Link
               to="/cart"
               className="relative p-2 rounded-full bg-blue-500 text-white hover:bg-blue-600"
@@ -148,7 +146,6 @@ const Header = () => {
               )}
             </Link>
 
-            {/* Profile Dropdown */}
             <div className="relative">
               <button
                 onClick={() => setProfileMenuOpen(!profileMenuOpen)}
@@ -193,11 +190,9 @@ const Header = () => {
         )}
       </div>
 
-      {/* Mobile Right (Cart + Profile + Hamburger) */}
       <div className="md:hidden flex items-center gap-2">
         {role === "CUSTOMER" && (
           <>
-            {/* Cart */}
             <Link
               to="/cart"
               className="relative p-2 rounded-full bg-blue-500 text-white hover:bg-blue-600"
@@ -210,7 +205,6 @@ const Header = () => {
               )}
             </Link>
 
-            {/* Profile */}
             <button
               onClick={() => setProfileMenuOpen(!profileMenuOpen)}
               className="p-2 rounded-full bg-gray-200 text-gray-700 hover:bg-gray-300 transition"
@@ -220,13 +214,11 @@ const Header = () => {
           </>
         )}
 
-        {/* Hamburger */}
         <button onClick={() => setIsOpen(!isOpen)}>
           {isOpen ? <X size={20} /> : <MenuIcon size={20} />}
         </button>
       </div>
 
-      {/* Mobile Nav Dropdown */}
       {isOpen && (
         <div className="absolute top-16 left-0 w-full bg-white/95 backdrop-blur-md shadow-md py-4 flex flex-col gap-2 px-6 md:hidden">
           {role === "CUSTOMER" && (

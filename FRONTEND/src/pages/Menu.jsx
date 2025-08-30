@@ -69,8 +69,10 @@ const Menu = () => {
   const sortedRestaurants = [...filteredRestaurants].sort((a, b) => {
     if (sortOption === "name-asc") return a.name.localeCompare(b.name);
     if (sortOption === "name-desc") return b.name.localeCompare(a.name);
-    if (sortOption === "address-asc") return (a.address || "").localeCompare(b.address || "");
-    if (sortOption === "address-desc") return (b.address || "").localeCompare(a.address || "");
+    if (sortOption === "address-asc")
+      return (a.address || "").localeCompare(b.address || "");
+    if (sortOption === "address-desc")
+      return (b.address || "").localeCompare(a.address || "");
     return 0;
   });
 
@@ -99,13 +101,22 @@ const Menu = () => {
         </h1>
       )}
 
-      {/* Cart animation */}
       <AnimatePresence>
         {cartAnimation && (
           <motion.div
             key={cartAnimation.key}
-            initial={{ x: cartAnimation.x, y: cartAnimation.y, scale: 1, opacity: 1 }}
-            animate={{ x: CART_TARGET.x, y: CART_TARGET.y, scale: 0.3, opacity: 0 }}
+            initial={{
+              x: cartAnimation.x,
+              y: cartAnimation.y,
+              scale: 1,
+              opacity: 1,
+            }}
+            animate={{
+              x: CART_TARGET.x,
+              y: CART_TARGET.y,
+              scale: 0.3,
+              opacity: 0,
+            }}
             transition={{ duration: 0.8, ease: "easeInOut" }}
             onAnimationComplete={() => setCartAnimation(null)}
             className="fixed z-50 text-blue-500 pointer-events-none"
@@ -115,10 +126,8 @@ const Menu = () => {
         )}
       </AnimatePresence>
 
-      {/* Restaurants list */}
       {!selectedResto ? (
         <div>
-          {/* Search + Sort */}
           <div className="flex flex-col sm:flex-row sm:justify-end sm:items-center gap-3 sm:gap-4 mb-6">
             <div className="relative w-full sm:w-1/2 md:w-1/3">
               <input
@@ -128,7 +137,10 @@ const Menu = () => {
                 placeholder="Search restaurant..."
                 className="w-full pl-4 pr-10 py-2 rounded-full border border-gray-300 bg-white/80 text-gray-800 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-400 transition-all duration-200"
               />
-              <Search className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+              <Search
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400"
+                size={18}
+              />
             </div>
             <select
               value={sortOption}
@@ -143,9 +155,10 @@ const Menu = () => {
             </select>
           </div>
 
-          {/* Restaurant grid */}
           {sortedRestaurants.length === 0 ? (
-            <p className="text-center text-gray-400 text-lg">No restaurants found</p>
+            <p className="text-center text-gray-400 text-lg">
+              No restaurants found
+            </p>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
               {sortedRestaurants.map((resto) => (
@@ -156,15 +169,19 @@ const Menu = () => {
                   onClick={() => setSelectedResto(resto)}
                 >
                   <div className="p-5">
-                    <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-2">{resto.name}</h2>
+                    <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-2">
+                      {resto.name}
+                    </h2>
                     {resto.address && (
                       <p className="flex items-center gap-2 text-gray-600 text-sm mb-1">
-                        <MapPin size={16} className="text-blue-500" /> {resto.address}
+                        <MapPin size={16} className="text-blue-500" />{" "}
+                        {resto.address}
                       </p>
                     )}
                     {resto.phone && (
                       <p className="flex items-center gap-2 text-gray-600 text-sm">
-                        <Phone size={16} className="text-green-500" /> {resto.phone}
+                        <Phone size={16} className="text-green-500" />{" "}
+                        {resto.phone}
                       </p>
                     )}
                     <button className="mt-4 w-full bg-gradient-to-r from-blue-400 to-blue-500 hover:from-blue-500 hover:to-blue-600 text-white py-2 rounded-xl font-semibold transition-all duration-300 cursor-pointer">
@@ -177,7 +194,6 @@ const Menu = () => {
           )}
         </div>
       ) : (
-        /* Menu list */
         <div>
           <button
             onClick={() => setSelectedResto(null)}
@@ -190,7 +206,6 @@ const Menu = () => {
             {selectedResto.name}'s Menu 🍽️
           </h2>
 
-          {/* Search + Sort menu */}
           <div className="flex flex-col sm:flex-row sm:justify-end sm:items-center gap-3 sm:gap-4 mb-6">
             <div className="relative w-full sm:w-1/2 md:w-1/3">
               <input
@@ -200,7 +215,10 @@ const Menu = () => {
                 placeholder="Search menu..."
                 className="w-full pl-4 pr-10 py-2 rounded-full border border-gray-300 bg-white/80 text-gray-800 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-400 transition-all duration-200"
               />
-              <Search className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+              <Search
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400"
+                size={18}
+              />
             </div>
             <select
               value={menuSortOption}
@@ -215,7 +233,6 @@ const Menu = () => {
             </select>
           </div>
 
-          {/* Menu grid */}
           {restoMenus.length === 0 ? (
             <p className="text-center text-gray-400 text-lg">No menu found</p>
           ) : (
@@ -238,7 +255,9 @@ const Menu = () => {
                     />
                   </div>
                   <div className="p-4 flex flex-col gap-2">
-                    <h3 className="text-md sm:text-lg font-semibold text-gray-900">{menu.name}</h3>
+                    <h3 className="text-md sm:text-lg font-semibold text-gray-900">
+                      {menu.name}
+                    </h3>
                     <p className="text-blue-600 font-semibold text-sm px-2 py-1 bg-blue-100 rounded-full inline-block shadow-sm max-w-max truncate">
                       Rp {menu.price.toLocaleString("id-ID")}
                     </p>
@@ -257,7 +276,6 @@ const Menu = () => {
         </div>
       )}
 
-      {/* Menu detail modal */}
       <AnimatePresence>
         {selectedMenu && (
           <motion.div
@@ -287,7 +305,9 @@ const Menu = () => {
                 />
               </div>
 
-              <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">{selectedMenu.name}</h3>
+              <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">
+                {selectedMenu.name}
+              </h3>
               <p className="text-blue-600 font-semibold text-lg mb-4 truncate">
                 Rp {selectedMenu.price.toLocaleString("id-ID")}
               </p>

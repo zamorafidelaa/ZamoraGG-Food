@@ -60,7 +60,6 @@ const Profile = () => {
       )}
 
       <form onSubmit={handleSubmit} className="space-y-3">
-        {/* Name */}
         <div>
           <label className="block text-sm font-medium text-gray-600">Name</label>
           <input
@@ -72,7 +71,6 @@ const Profile = () => {
           />
         </div>
 
-        {/* Email */}
         <div>
           <label className="block text-sm font-medium text-gray-600">Email</label>
           <input
@@ -84,7 +82,6 @@ const Profile = () => {
           />
         </div>
 
-        {/* Street */}
         <div>
           <label className="block text-sm font-medium text-gray-600">Street</label>
           <input
@@ -97,7 +94,6 @@ const Profile = () => {
           />
         </div>
 
-        {/* City */}
         <div>
           <label className="block text-sm font-medium text-gray-600">City</label>
           <input
@@ -110,7 +106,6 @@ const Profile = () => {
           />
         </div>
 
-        {/* Postal Code */}
         <div>
           <label className="block text-sm font-medium text-gray-600">Postal Code</label>
           <input
@@ -123,7 +118,6 @@ const Profile = () => {
           />
         </div>
 
-        {/* Phone */}
         <div>
           <label className="block text-sm font-medium text-gray-600">Phone</label>
           <input
@@ -136,7 +130,6 @@ const Profile = () => {
           />
         </div>
 
-        {/* Save Button */}
         <button
           type="submit"
           className="w-full bg-blue-600 text-white py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition-all duration-200"

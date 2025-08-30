@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Edit, Trash2 } from "lucide-react";
 
-const API_BASE = "http://localhost:8080/users";
+const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
 const AdminCouriers = () => {
   const [couriers, setCouriers] = useState([]);
@@ -17,7 +17,7 @@ const AdminCouriers = () => {
 
   const fetchCouriers = async () => {
     try {
-      const res = await fetch(`${API_BASE}/all`);
+      const res = await fetch(`${API_BASE}/users/all`);
       const data = await res.json();
       const courierList = data.filter((u) => u.role === "COURIER");
       setCouriers(courierList);
@@ -61,11 +61,11 @@ const AdminCouriers = () => {
     }
 
     try {
-      let url = `${API_BASE}/register/courier/${adminId}`;
+      let url = `${API_BASE}/users/register/courier/${adminId}`;
       let method = "POST";
 
       if (editId) {
-        url = `${API_BASE}/courier/${adminId}/${editId}`;
+        url = `${API_BASE}/users/courier/${adminId}/${editId}`;
         method = "PUT";
       }
 
@@ -90,7 +90,7 @@ const AdminCouriers = () => {
     if (!window.confirm("Are you sure to delete this courier?")) return;
 
     try {
-      const res = await fetch(`${API_BASE}/courier/${adminId}/${id}`, {
+      const res = await fetch(`${API_BASE}/users/courier/${adminId}/${id}`, {
         method: "DELETE",
       });
       const data = await res.json();
@@ -104,7 +104,6 @@ const AdminCouriers = () => {
 
   return (
     <div className="min-h-screen p-4 sm:p-6 bg-gray-50">
-      {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
         <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-blue-800">
           Couriers Management
@@ -117,7 +116,6 @@ const AdminCouriers = () => {
         </button>
       </div>
 
-      {/* Message */}
       {message && (
         <motion.p
           className="mb-4 text-center text-green-600 font-semibold text-sm sm:text-base"
@@ -129,7 +127,6 @@ const AdminCouriers = () => {
         </motion.p>
       )}
 
-      {/* Responsive Table / Cards */}
       <div className="overflow-x-auto rounded-lg shadow-md bg-white hidden sm:block">
         <table className="w-full table-auto text-sm sm:text-base">
           <thead className="bg-blue-200 text-blue-900">
@@ -169,7 +166,6 @@ const AdminCouriers = () => {
         </table>
       </div>
 
-      {/* Mobile View: Cards */}
       <div className="grid grid-cols-1 gap-4 sm:hidden">
         {couriers.map((c) => (
           <div
@@ -197,7 +193,6 @@ const AdminCouriers = () => {
         ))}
       </div>
 
-      {/* Modal */}
       <AnimatePresence>
         {isModalOpen && (
           <motion.div

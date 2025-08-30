@@ -1,4 +1,3 @@
-// src/pages/AdminReports.jsx
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import {
@@ -13,13 +12,13 @@ import {
   Bar,
 } from "recharts";
 
-const API_BASE = "http://localhost:8080/orders/reports"; // pastikan endpoint sama di backend
+const API_BASE = `${import.meta.env.VITE_API_BASE_URL}/orders/reports`;
 
 const AdminReports = () => {
   const [reportType, setReportType] = useState("daily");
   const [reportData, setReportData] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [showChart, setShowChart] = useState(true); // toggle chart
+  const [showChart, setShowChart] = useState(true);
 
   const fetchReport = async (type) => {
     setLoading(true);
@@ -28,7 +27,6 @@ const AdminReports = () => {
       const data = await res.json();
       console.log("Report response:", data);
 
-      // Konversi report object ke array
       const formattedData = Object.entries(data.report || {}).map(
         ([period, totalRevenue]) => ({
           period,
@@ -62,7 +60,6 @@ const AdminReports = () => {
 
   return (
     <div className="min-h-screen p-6 bg-gray-50">
-      {/* Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 gap-4">
         <h1 className="text-2xl font-bold text-blue-800">Revenue Reports</h1>
         <div className="flex gap-2">
@@ -88,7 +85,6 @@ const AdminReports = () => {
         <p className="text-center text-blue-600 font-semibold">Loading...</p>
       ) : (
         <>
-          {/* Summary Cards */}
           <motion.div
             className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4"
             initial={{ opacity: 0, y: 15 }}
@@ -113,7 +109,6 @@ const AdminReports = () => {
             </div>
           </motion.div>
 
-          {/* Chart Section (toggle) */}
           {showChart && (
             <motion.div
               className="bg-white p-4 rounded-2xl shadow-md mb-6"
@@ -135,22 +130,10 @@ const AdminReports = () => {
                       <Line
                         type="monotone"
                         dataKey="totalRevenue"
-                        stroke="#3b82f6" // biru untuk daily
+                        stroke="#3b82f6"
                         strokeWidth={2}
                       />
                     </LineChart>
-                  ) : reportType === "monthly" ? (
-                    <BarChart data={reportData}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="period" />
-                      <YAxis />
-                      <Tooltip />
-                      <Bar
-                        dataKey="totalRevenue"
-                        fill="#16a34a" // hijau untuk monthly
-                        radius={[4, 4, 0, 0]}
-                      />
-                    </BarChart>
                   ) : (
                     <BarChart data={reportData}>
                       <CartesianGrid strokeDasharray="3 3" />
@@ -159,7 +142,7 @@ const AdminReports = () => {
                       <Tooltip />
                       <Bar
                         dataKey="totalRevenue"
-                        fill="#f97316" // oranye untuk yearly
+                        fill={reportType === "monthly" ? "#16a34a" : "#f97316"}
                         radius={[4, 4, 0, 0]}
                       />
                     </BarChart>
@@ -169,7 +152,6 @@ const AdminReports = () => {
             </motion.div>
           )}
 
-          {/* Table Section */}
           <motion.div
             className="overflow-x-auto rounded-lg shadow-md bg-white"
             initial={{ opacity: 0, y: 20 }}

@@ -132,108 +132,118 @@ const Cart = () => {
     }
   };
 
-  const confirmCheckout = async () => {
-    if (!pendingOrder) return;
-    const subtotal = itemsToCheckout.reduce(
-      (sum, item) => sum + item.menu.price * item.quantity,
-      0
-    );
-    const deliveryFee = pendingOrder.order.deliveryFee || 0;
+const confirmCheckout = async () => {
+  if (!pendingOrder) return;
+  const subtotal = itemsToCheckout.reduce(
+    (sum, item) => sum + item.menu.price * item.quantity,
+    0
+  );
+  const deliveryFee = pendingOrder.order.deliveryFee || 0;
 
-    setReceiptData({
-      order: {
-        ...pendingOrder.order,
-        checkoutTime: new Date().toLocaleString(),
-        totalPrice: subtotal + deliveryFee,
-        deliveryFee,
-        address: { ...address },
-      },
-      items: itemsToCheckout,
-    });
+  setReceiptData({
+    order: {
+      ...pendingOrder.order,
+      checkoutTime: new Date().toLocaleString(),
+      totalPrice: subtotal + deliveryFee,
+      deliveryFee,
+      address: { ...address },
+      paymentStatus: "BELUM LUNAS", 
+    },
+    items: itemsToCheckout,
+  });
 
-    setMessage("✅ Checkout successful!");
-    setShowReceipt(true);
-    itemsToCheckout.forEach((item) => removeFromCart(item.id));
-    setSelectedItems([]);
-    setPendingOrder(null);
-    setShowConfirm(false);
-    window.dispatchEvent(new Event("cartUpdated"));
-  };
+  setMessage("✅ Checkout successful!");
+  setShowReceipt(true);
+  itemsToCheckout.forEach((item) => removeFromCart(item.id));
+  setSelectedItems([]);
+  setPendingOrder(null);
+  setShowConfirm(false);
+  window.dispatchEvent(new Event("cartUpdated"));
+};
 
-  const printReceipt = () => {
-    if (!receiptData) return;
-    const { order, items } = receiptData;
-    const doc = new jsPDF();
-    let y = 20;
-    doc.setFont("courier", "normal");
-    doc.setFontSize(14);
-    doc.text("===== RECEIPT =====", 14, y);
-    y += 10;
-    doc.setFontSize(12);
-    doc.text(`Order ID   : ${order.id}`, 14, y);
-    y += 7;
-    doc.text(`Checkout   : ${order.checkoutTime}`, 14, y);
-    y += 7;
-    doc.text(`Delivery To: ${order.address.street}`, 14, y);
-    y += 6;
-    doc.text(
-      `            ${order.address.city}, ${order.address.postalCode}`,
-      14,
-      y
-    );
-    y += 6;
-    doc.text(`Phone      : ${order.address.phone}`, 14, y);
-    y += 10;
-    doc.text("-------------------------------", 14, y);
-    y += 6;
-    doc.text("Item                Qty   Total", 14, y);
-    y += 6;
-    doc.text("-------------------------------", 14, y);
-    y += 6;
-    items.forEach((item) => {
-      let name =
-        item.menu.name.length > 16
-          ? item.menu.name.slice(0, 16) + "…"
-          : item.menu.name;
-      let qty = item.quantity.toString().padStart(3, " ");
-      let total = (item.menu.price * item.quantity)
-        .toLocaleString("id-ID")
-        .padStart(7, " ");
-      doc.text(`${name.padEnd(18, " ")} ${qty} ${total}`, 14, y);
-      y += 6;
-      if (y > 270) {
-        doc.addPage();
-        y = 20;
-      }
-    });
-    doc.text("-------------------------------", 14, y);
-    y += 6;
-    doc.text(
-      `Subtotal       : ${items
-        .reduce((sum, item) => sum + item.menu.price * item.quantity, 0)
-        .toLocaleString("id-ID")}`,
-      14,
-      y
-    );
-    y += 6;
-    doc.text(
-      `Delivery Fee   : ${order.deliveryFee.toLocaleString("id-ID")}`,
-      14,
-      y
-    );
-    y += 6;
-    doc.text(
-      `TOTAL          : ${order.totalPrice.toLocaleString("id-ID")}`,
-      14,
-      y
-    );
-    y += 10;
-    doc.text("===============================", 14, y);
-    y += 6;
-    doc.text("Thank you for your order!", 14, y);
-    doc.save("receipt.pdf");
-  };
+const printReceipt = () => {
+  if (!receiptData) return;
+  const { order, items } = receiptData;
+  const doc = new jsPDF({
+    orientation: "p",
+    unit: "mm",
+    format: [80, 200], 
+  });
 
+  let y = 10;
+
+  doc.setFont("courier", "normal");
+  doc.setFontSize(10);
+
+  doc.addImage("ggfood.png", "PNG", 30, y, 20, 20);
+  y += 25;
+
+  doc.setFontSize(12);
+  doc.setFont(undefined, "bold");
+  doc.text("ZamoraGG Food Delivery", 40, y, { align: "center" });
+  y += 6;
+  doc.setFontSize(9);
+  doc.setFont(undefined, "normal");
+  doc.text("Blok Rengas Jatibarang No. 123", 40, y, { align: "center" });
+  y += 6;
+  doc.text("Telp: 087763323044", 40, y, { align: "center" });
+  y += 8;
+
+  doc.text(`Order ID      : ${order.id}`, 5, y);
+  y += 5;
+  doc.text(`Checkout      : ${order.checkoutTime}`, 5, y);
+  y += 5;
+  doc.text(
+    `Delivery To   : ${order.address.street}, ${order.address.city}, ${order.address.postalCode}`,
+    5,
+    y
+  );
+  y += 5;
+  doc.text(`Phone         : ${order.address.phone}`, 5, y);
+  y += 5;
+  doc.text(`Payment Status: ${order.paymentStatus}`, 5, y);
+  y += 6;
+
+  doc.text("--------------------------------", 5, y);
+  y += 4;
+  doc.text("Item            Qty   Total", 5, y);
+  y += 4;
+  doc.text("--------------------------------", 5, y);
+  y += 4;
+
+  items.forEach((item) => {
+    let name = item.menu.name.length > 14 ? item.menu.name.slice(0, 14) + "…" : item.menu.name;
+    let qty = item.quantity.toString().padStart(3, " ");
+    let total = (item.menu.price * item.quantity).toLocaleString("id-ID").padStart(7, " ");
+    doc.text(`${name.padEnd(14, " ")} ${qty} ${total}`, 5, y);
+    y += 5;
+    if (y > 180) { 
+      doc.addPage();
+      y = 10;
+    }
+  });
+
+  y += 2;
+  doc.text("--------------------------------", 5, y);
+  y += 5;
+  doc.setFont(undefined, "bold");
+  doc.text(
+    `Subtotal      : Rp ${items.reduce((sum, item) => sum + item.menu.price * item.quantity, 0).toLocaleString("id-ID")}`,
+    5,
+    y
+  );
+  y += 5;
+  doc.text(`Delivery Fee  : Rp ${order.deliveryFee.toLocaleString("id-ID")}`, 5, y);
+  y += 5;
+  doc.text(`TOTAL         : Rp ${order.totalPrice.toLocaleString("id-ID")}`, 5, y);
+  y += 6;
+  doc.setFont(undefined, "normal");
+  doc.text("--------------------------------", 5, y);
+  y += 5;
+  doc.text("Thank you for your order!", 40, y, { align: "center" });
+
+  doc.save(`Receipt_Order_${order.id}.pdf`);
+};
   return (
     <div className="p-4 sm:p-6 max-w-5xl mx-auto mb-52">
       <h1 className="text-2xl sm:text-3xl font-bold text-blue-600 mb-4 sm:mb-6">

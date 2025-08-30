@@ -3,7 +3,7 @@ import { useNavigate, Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Mail, Lock, User } from "lucide-react";
 
-const API_BASE = "http://localhost:8080/users";
+const API_BASE = `${import.meta.env.VITE_API_BASE_URL}/users`;
 
 const Register = () => {
   const navigate = useNavigate();
@@ -12,14 +12,12 @@ const Register = () => {
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
 
-  // state error tiap input
   const [errors, setErrors] = useState({
     name: "",
     email: "",
     password: "",
   });
 
-  // fungsi validasi realtime
   const validate = (field, value) => {
     let error = "";
 
@@ -46,7 +44,6 @@ const Register = () => {
   const handleRegister = async (e) => {
     e.preventDefault();
 
-    // cek ada error?
     if (errors.name || errors.email || errors.password) {
       setMessage("Please fix the errors before submitting");
       return;
@@ -76,7 +73,6 @@ const Register = () => {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
       >
-        {/* Left side */}
         <div className="hidden md:flex w-1/2 bg-gradient-to-br from-blue-100 to-blue-300 flex-col items-center justify-center text-blue-900 text-center p-6">
           <motion.h2
             initial={{ opacity: 0, y: 20 }}
@@ -96,7 +92,6 @@ const Register = () => {
           </motion.p>
         </div>
 
-        {/* Right side form */}
         <div className="w-full md:w-1/2 bg-white p-8">
           <div className="flex flex-col items-center mb-6">
             <div className="w-14 h-14 bg-blue-300 flex items-center justify-center rounded-lg mb-2 shadow-md">
@@ -106,7 +101,6 @@ const Register = () => {
           </div>
 
           <form onSubmit={handleRegister} className="flex flex-col gap-4">
-            {/* Full name */}
             <div>
               <div className="flex items-center border-b border-gray-300 py-2">
                 <User className="text-gray-400 mr-2" size={18} />
@@ -126,7 +120,6 @@ const Register = () => {
               )}
             </div>
 
-            {/* Email */}
             <div>
               <div className="flex items-center border-b border-gray-300 py-2">
                 <Mail className="text-gray-400 mr-2" size={18} />
@@ -146,7 +139,6 @@ const Register = () => {
               )}
             </div>
 
-            {/* Password */}
             <div>
               <div className="flex items-center border-b border-gray-300 py-2">
                 <Lock className="text-gray-400 mr-2" size={18} />
@@ -166,7 +158,6 @@ const Register = () => {
               )}
             </div>
 
-            {/* Button */}
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.97 }}

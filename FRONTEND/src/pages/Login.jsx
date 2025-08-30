@@ -1,4 +1,3 @@
-// src/pages/Login.jsx
 import React, { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { motion } from "framer-motion";
@@ -14,10 +13,8 @@ const Login = () => {
   const [errors, setErrors] = useState({ email: "", password: "" });
   const [isValid, setIsValid] = useState(false);
 
-  // track touched fields
   const [touched, setTouched] = useState({ email: false, password: false });
 
-  // Validation handler
   const validateInputs = () => {
     let newErrors = { email: "", password: "" };
 
@@ -84,7 +81,6 @@ const Login = () => {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
       >
-        {/* Left side */}
         <div className="hidden md:flex w-1/2 bg-gradient-to-br from-blue-100 to-blue-300 flex-col items-center justify-center text-blue-900 text-center p-6">
           <motion.h2
             initial={{ opacity: 0, y: 20 }}
@@ -104,7 +100,6 @@ const Login = () => {
           </motion.p>
         </div>
 
-        {/* Right side form */}
         <div className="w-full md:w-1/2 bg-white p-8">
           <div className="flex flex-col items-center mb-6">
             <div className="w-14 h-14 bg-blue-300 flex items-center justify-center rounded-lg mb-2 shadow-md">
@@ -114,7 +109,6 @@ const Login = () => {
           </div>
 
           <form onSubmit={handleLogin} className="flex flex-col gap-4">
-            {/* Email */}
             <div>
               <div className="flex items-center border-b border-gray-300 py-2">
                 <Mail className="text-gray-400 mr-2" size={18} />
@@ -139,7 +133,6 @@ const Login = () => {
               )}
             </div>
 
-            {/* Password */}
             <div>
               <div className="flex items-center border-b border-gray-300 py-2">
                 <Lock className="text-gray-400 mr-2" size={18} />
@@ -164,7 +157,6 @@ const Login = () => {
               )}
             </div>
 
-            {/* Submit */}
             <motion.button
               whileHover={isValid ? { scale: 1.05 } : {}}
               whileTap={isValid ? { scale: 0.97 } : {}}
@@ -180,7 +172,6 @@ const Login = () => {
             </motion.button>
           </form>
 
-          {/* API response message */}
           {message && (
             <motion.p
               initial={{ opacity: 0 }}
@@ -196,7 +187,6 @@ const Login = () => {
             </motion.p>
           )}
 
-          {/* Register link */}
           <p className="mt-6 text-center text-sm text-gray-600">
             Don’t have an account?{" "}
             <Link to="/register" className="text-blue-500 hover:underline">
