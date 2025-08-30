@@ -21,6 +21,10 @@ const Menu = () => {
   const [selectedMenu, setSelectedMenu] = useState(null);
   const [cartAnimation, setCartAnimation] = useState(null);
 
+  const [restoPage, setRestoPage] = useState(1);
+  const [menuPage, setMenuPage] = useState(1);
+  const ITEMS_PER_PAGE = 8;
+
   const userId = localStorage.getItem("userId");
   const CART_TARGET = { x: window.innerWidth - 60, y: 20 };
 
@@ -76,6 +80,12 @@ const Menu = () => {
     return 0;
   });
 
+  const totalRestoPages = Math.ceil(sortedRestaurants.length / ITEMS_PER_PAGE);
+  const paginatedRestaurants = sortedRestaurants.slice(
+    (restoPage - 1) * ITEMS_PER_PAGE,
+    restoPage * ITEMS_PER_PAGE
+  );
+
   let restoMenus = selectedResto
     ? menus.filter(
         (menu) =>
@@ -91,6 +101,12 @@ const Menu = () => {
     if (menuSortOption === "price-desc") return b.price - a.price;
     return 0;
   });
+
+  const totalMenuPages = Math.ceil(restoMenus.length / ITEMS_PER_PAGE);
+  const paginatedMenus = restoMenus.slice(
+    (menuPage - 1) * ITEMS_PER_PAGE,
+    menuPage * ITEMS_PER_PAGE
+  );
 
   return (
     <div className="p-4 sm:p-6 max-w-7xl mx-auto min-h-screen pb-24">
@@ -155,42 +171,96 @@ const Menu = () => {
             </select>
           </div>
 
-          {sortedRestaurants.length === 0 ? (
-            <p className="text-center text-gray-400 text-lg">
+          {paginatedRestaurants.length === 0 ? (
+            <motion.p
+              className="text-center text-gray-400 text-lg"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.5 }}
+            >
               No restaurants found
-            </p>
+            </motion.p>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
-              {sortedRestaurants.map((resto) => (
-                <motion.div
-                  key={resto.id}
-                  whileHover={{ scale: 1.05 }}
-                  className="bg-white rounded-2xl overflow-hidden shadow-md cursor-pointer transition-all duration-300 border border-gray-200 hover:shadow-xl"
-                  onClick={() => setSelectedResto(resto)}
-                >
-                  <div className="p-5">
-                    <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-2">
-                      {resto.name}
-                    </h2>
-                    {resto.address && (
-                      <p className="flex items-center gap-2 text-gray-600 text-sm mb-1">
-                        <MapPin size={16} className="text-blue-500" />{" "}
-                        {resto.address}
-                      </p>
-                    )}
-                    {resto.phone && (
-                      <p className="flex items-center gap-2 text-gray-600 text-sm">
-                        <Phone size={16} className="text-green-500" />{" "}
-                        {resto.phone}
-                      </p>
-                    )}
-                    <button className="mt-4 w-full bg-gradient-to-r from-blue-400 to-blue-500 hover:from-blue-500 hover:to-blue-600 text-white py-2 rounded-xl font-semibold transition-all duration-300 cursor-pointer">
-                      See Menu
-                    </button>
-                  </div>
-                </motion.div>
-              ))}
-            </div>
+            <>
+              <motion.div
+                className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5"
+                initial="hidden"
+                animate="visible"
+                variants={{
+                  hidden: {},
+                  visible: { transition: { staggerChildren: 0.1 } },
+                }}
+              >
+                {paginatedRestaurants.map((resto) => (
+                  <motion.div
+                    key={resto.id}
+                    className="bg-white rounded-2xl overflow-hidden shadow-md cursor-pointer transition-all duration-300 border border-gray-200 hover:shadow-xl"
+                    onClick={() => {
+                      setSelectedResto(resto);
+                      setMenuPage(1);
+                    }}
+                    initial={{ opacity: 0, y: 20, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    transition={{ duration: 0.4, ease: "easeOut" }}
+                  >
+                    <div className="p-5">
+                      <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-2">
+                        {resto.name}
+                      </h2>
+                      {resto.address && (
+                        <p className="flex items-center gap-2 text-gray-600 text-sm mb-1">
+                          <MapPin size={16} className="text-blue-500" />{" "}
+                          {resto.address}
+                        </p>
+                      )}
+                      {resto.phone && (
+                        <p className="flex items-center gap-2 text-gray-600 text-sm">
+                          <Phone size={16} className="text-green-500" />{" "}
+                          {resto.phone}
+                        </p>
+                      )}
+                      <button className="mt-4 w-full bg-gradient-to-r from-blue-400 to-blue-500 hover:from-blue-500 hover:to-blue-600 text-white py-2 rounded-xl font-semibold transition-all duration-300 cursor-pointer">
+                        See Menu
+                      </button>
+                    </div>
+                  </motion.div>
+                ))}
+              </motion.div>
+
+              {totalRestoPages > 1 && (
+                <div className="flex justify-center gap-2 mt-6">
+                  <button
+                    disabled={restoPage === 1}
+                    onClick={() => setRestoPage(restoPage - 1)}
+                    className="px-3 py-1 rounded bg-gray-200 hover:bg-gray-300 disabled:opacity-50"
+                  >
+                    Prev
+                  </button>
+                  {Array.from({ length: totalRestoPages }, (_, i) => i + 1).map(
+                    (num) => (
+                      <button
+                        key={num}
+                        onClick={() => setRestoPage(num)}
+                        className={`px-3 py-1 rounded ${
+                          restoPage === num
+                            ? "bg-blue-500 text-white"
+                            : "bg-gray-200 hover:bg-gray-300"
+                        }`}
+                      >
+                        {num}
+                      </button>
+                    )
+                  )}
+                  <button
+                    disabled={restoPage === totalRestoPages}
+                    onClick={() => setRestoPage(restoPage + 1)}
+                    className="px-3 py-1 rounded bg-gray-200 hover:bg-gray-300 disabled:opacity-50"
+                  >
+                    Next
+                  </button>
+                </div>
+              )}
+            </>
           )}
         </div>
       ) : (
@@ -233,45 +303,81 @@ const Menu = () => {
             </select>
           </div>
 
-          {restoMenus.length === 0 ? (
+          {paginatedMenus.length === 0 ? (
             <p className="text-center text-gray-400 text-lg">No menu found</p>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
-              {restoMenus.map((menu, index) => (
-                <motion.div
-                  key={menu.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.1, duration: 0.4 }}
-                  whileHover={{ scale: 1.03 }}
-                  className="bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-shadow duration-300 border border-gray-200"
-                >
-                  <div className="relative w-full h-40 sm:h-48 md:h-56 overflow-hidden rounded-t-2xl">
-                    <img
-                      src={getMenuImageUrl(menu.imageUrl)}
-                      alt={menu.name}
-                      className="w-full h-full object-cover object-center transition-transform duration-500 hover:scale-105 cursor-pointer"
-                      onClick={() => setSelectedMenu(menu)}
-                    />
-                  </div>
-                  <div className="p-4 flex flex-col gap-2">
-                    <h3 className="text-md sm:text-lg font-semibold text-gray-900">
-                      {menu.name}
-                    </h3>
-                    <p className="text-blue-600 font-semibold text-sm px-2 py-1 bg-blue-100 rounded-full inline-block shadow-sm max-w-max truncate">
-                      Rp {menu.price.toLocaleString("id-ID")}
-                    </p>
-                    <motion.button
-                      whileTap={{ scale: 0.95 }}
-                      className="mt-2 w-full border border-blue-500 bg-transparent text-blue-500 py-2 rounded-xl font-semibold shadow-sm hover:bg-blue-100 transition-all duration-300 cursor-pointer flex items-center justify-center gap-2"
-                      onClick={(e) => addToCart(menu, e)}
-                    >
-                      <ShoppingCart size={18} /> Add to Cart
-                    </motion.button>
-                  </div>
-                </motion.div>
-              ))}
-            </div>
+            <>
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
+                {paginatedMenus.map((menu, index) => (
+                  <motion.div
+                    key={menu.id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.1, duration: 0.4 }}
+                    whileHover={{ scale: 1.03 }}
+                    className="bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-shadow duration-300 border border-gray-200"
+                  >
+                    <div className="relative w-full h-40 sm:h-48 md:h-56 overflow-hidden rounded-t-2xl">
+                      <img
+                        src={getMenuImageUrl(menu.imageUrl)}
+                        alt={menu.name}
+                        className="w-full h-full object-cover object-center transition-transform duration-500 hover:scale-105 cursor-pointer"
+                        onClick={() => setSelectedMenu(menu)}
+                      />
+                    </div>
+                    <div className="p-4 flex flex-col gap-2">
+                      <h3 className="text-md sm:text-lg font-semibold text-gray-900">
+                        {menu.name}
+                      </h3>
+                      <p className="text-blue-600 font-semibold text-sm px-2 py-1 bg-blue-100 rounded-full inline-block shadow-sm max-w-max truncate">
+                        Rp {menu.price.toLocaleString("id-ID")}
+                      </p>
+                      <motion.button
+                        whileTap={{ scale: 0.95 }}
+                        className="mt-2 w-full border border-blue-500 bg-transparent text-blue-500 py-2 rounded-4xl font-semibold shadow-sm hover:bg-blue-100 transition-all duration-300 cursor-pointer flex items-center justify-center gap-2"
+                        onClick={(e) => addToCart(menu, e)}
+                      >
+                        <ShoppingCart size={18} /> Add to Cart
+                      </motion.button>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+
+              {totalMenuPages > 1 && (
+                <div className="flex justify-center gap-2 mt-6">
+                  <button
+                    disabled={menuPage === 1}
+                    onClick={() => setMenuPage(menuPage - 1)}
+                    className="px-3 py-1 rounded bg-gray-200 hover:bg-gray-300 disabled:opacity-50"
+                  >
+                    Prev
+                  </button>
+                  {Array.from({ length: totalMenuPages }, (_, i) => i + 1).map(
+                    (num) => (
+                      <button
+                        key={num}
+                        onClick={() => setMenuPage(num)}
+                        className={`px-3 py-1 rounded ${
+                          menuPage === num
+                            ? "bg-blue-500 text-white"
+                            : "bg-gray-200 hover:bg-gray-300"
+                        }`}
+                      >
+                        {num}
+                      </button>
+                    )
+                  )}
+                  <button
+                    disabled={menuPage === totalMenuPages}
+                    onClick={() => setMenuPage(menuPage + 1)}
+                    className="px-3 py-1 rounded bg-gray-200 hover:bg-gray-300 disabled:opacity-50"
+                  >
+                    Next
+                  </button>
+                </div>
+              )}
+            </>
           )}
         </div>
       )}
@@ -318,7 +424,7 @@ const Menu = () => {
 
               <motion.button
                 whileTap={{ scale: 0.95 }}
-                className="w-full border border-blue-500 bg-transparent text-blue-500 py-3 rounded-xl font-semibold shadow-sm hover:bg-blue-100 transition-all duration-300 cursor-pointer flex items-center justify-center gap-2"
+                className="w-full border border-blue-500 bg-transparent text-blue-500 py-3 rounded-4xl font-semibold shadow-sm hover:bg-blue-100 transition-all duration-300 cursor-pointer flex items-center justify-center gap-2"
                 onClick={(e) => {
                   addToCart(selectedMenu, e);
                   setSelectedMenu(null);

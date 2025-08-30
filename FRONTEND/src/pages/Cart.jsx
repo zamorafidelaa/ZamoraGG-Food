@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import jsPDF from "jspdf";
+import { useNavigate } from "react-router-dom";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
 const Cart = () => {
+  const navigate = useNavigate();
   const [cart, setCart] = useState([]);
   const [message, setMessage] = useState("");
   const [selectedItems, setSelectedItems] = useState([]);
@@ -97,17 +99,16 @@ const Cart = () => {
     if (!userId) return setMessage("⚠️ You must be logged in to checkout.");
     if (selectedItems.length === 0)
       return setMessage("⚠️ Please select at least one item.");
-    if (
-      !address.street ||
-      !address.city ||
-      !address.postalCode ||
-      !address.phone
-    ) {
-      return setMessage(
-        "Customer address is incomplete. Please fill it before checkout."
-      );
-    }
-
+if (
+  !address.street ||
+  !address.city ||
+  !address.postalCode ||
+  !address.phone
+) {
+  setMessage("⚠️ Customer address is incomplete. Redirecting to profile...");
+  setTimeout(() => navigate("/profile"), 1600); 
+  return;
+}
     try {
       const res = await fetch(`${API_BASE}/orders/create`, {
         method: "POST",

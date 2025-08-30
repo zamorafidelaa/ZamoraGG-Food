@@ -1,15 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts";
-import {
-  User,
-  Home,
-  ClipboardList,
-  Clock,
-  Check,
-  LogOut,
-  Menu,
-} from "lucide-react";
+import { User, Home, ClipboardList, Clock, Check, LogOut, Menu } from "lucide-react";
 
 const API_BASE = `${import.meta.env.VITE_API_BASE_URL}/courier-assignments`;
 const statusOrder = ["ASSIGNED", "PICKED_UP", "ON_DELIVERY", "DELIVERED"];
@@ -27,6 +19,8 @@ const CourierDashboard = () => {
   const [activeTab, setActiveTab] = useState(
     localStorage.getItem("activeTab") || "Dashboard"
   );
+  const [historyPage, setHistoryPage] = useState(1);
+  const historyPerPage = 3;
 
   const courierId = localStorage.getItem("userId");
 
@@ -73,8 +67,7 @@ const CourierDashboard = () => {
     return () => clearInterval(interval);
   }, [courierId]);
 
-  if (!courierId)
-    return <p className="p-6 text-red-500">Please login as courier.</p>;
+  if (!courierId) return <p className="p-6 text-red-500">Please login as courier.</p>;
 
   const activeOrders = orders.filter((o) => o.status !== "DELIVERED");
   const deliveredOrders = orders.filter((o) => o.status === "DELIVERED");
@@ -85,11 +78,7 @@ const CourierDashboard = () => {
   };
 
   const nextStatus = (status) => {
-    const map = {
-      ASSIGNED: "PICKED_UP",
-      PICKED_UP: "ON_DELIVERY",
-      ON_DELIVERY: "DELIVERED",
-    };
+    const map = { ASSIGNED: "PICKED_UP", PICKED_UP: "ON_DELIVERY", ON_DELIVERY: "DELIVERED" };
     return map[status] || null;
   };
 
@@ -104,11 +93,17 @@ const CourierDashboard = () => {
     value: orders.filter((o) => o.status === status).length,
   }));
 
+  const historyTotalPages = Math.ceil(deliveredOrders.length / historyPerPage);
+  const displayedHistory = deliveredOrders.slice(
+    (historyPage - 1) * historyPerPage,
+    historyPage * historyPerPage
+  );
+
   return (
     <div className="flex min-h-screen bg-blue-50">
+      {/* Sidebar */}
       <aside
-        className={`fixed md:static z-40 top-0 left-0 h-screen w-64 bg-blue-100 text-blue-900 p-6 flex flex-col justify-between transform transition-transform duration-300 
-        ${
+        className={`fixed md:static z-40 top-0 left-0 h-screen w-64 bg-blue-100 text-blue-900 p-6 flex flex-col justify-between transform transition-transform duration-300 ${
           sidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
         }`}
       >
@@ -119,26 +114,15 @@ const CourierDashboard = () => {
           </div>
           <nav className="flex flex-col space-y-2">
             {[
-              {
-                name: "Dashboard",
-                icon: <Home className="w-4 h-4 inline mr-2" />,
-              },
-              {
-                name: "Orders",
-                icon: <ClipboardList className="w-4 h-4 inline mr-2" />,
-              },
-              {
-                name: "History",
-                icon: <Clock className="w-4 h-4 inline mr-2" />,
-              },
+              { name: "Dashboard", icon: <Home className="w-4 h-4 inline mr-2" /> },
+              { name: "Orders", icon: <ClipboardList className="w-4 h-4 inline mr-2" /> },
+              { name: "History", icon: <Clock className="w-4 h-4 inline mr-2" /> },
             ].map((tab) => (
               <button
                 key={tab.name}
                 onClick={() => handleTabClick(tab.name)}
                 className={`text-left px-3 py-2 rounded-lg transition-colors duration-300 ${
-                  activeTab === tab.name
-                    ? "bg-blue-200 font-semibold shadow"
-                    : "hover:bg-blue-100"
+                  activeTab === tab.name ? "bg-blue-200 font-semibold shadow" : "hover:bg-blue-100"
                 }`}
               >
                 {tab.icon} {tab.name}
@@ -156,81 +140,44 @@ const CourierDashboard = () => {
         </div>
       </aside>
 
-      {sidebarOpen && (
-        <div
-          className="fixed inset-0 bg-black/40 z-30 md:hidden"
-          onClick={() => setSidebarOpen(false)}
-        />
-      )}
+      {sidebarOpen && <div className="fixed inset-0 bg-black/40 z-30 md:hidden" onClick={() => setSidebarOpen(false)} />}
 
+      {/* Main Content */}
       <main className="flex-1 p-4 md:p-8">
         <div className="md:hidden mb-4 flex justify-between items-center">
-          <button
-            onClick={() => setSidebarOpen(true)}
-            className="p-2 bg-blue-500 text-white rounded"
-          >
+          <button onClick={() => setSidebarOpen(true)} className="p-2 bg-blue-500 text-white rounded">
             <Menu />
           </button>
           <span className="font-semibold">{activeTab}</span>
         </div>
 
         <AnimatePresence mode="wait">
+          {/* Dashboard */}
           {activeTab === "Dashboard" && (
-            <motion.div
-              key="dashboard"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-            >
+            <motion.div key="dashboard" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}>
               <h2 className="text-2xl md:text-3xl font-bold text-gray-700 mb-6 flex items-center gap-2">
                 <Home className="w-5 h-5" /> Dashboard
               </h2>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
                 {[
-                  {
-                    label: "Total Orders",
-                    value: summary.totalOrders,
-                    color: "text-blue-600",
-                  },
-                  {
-                    label: "Active Orders",
-                    value: summary.activeOrders,
-                    color: "text-yellow-600",
-                  },
-                  {
-                    label: "Delivered Orders",
-                    value: summary.deliveredOrders,
-                    color: "text-green-600",
-                  },
+                  { label: "Total Orders", value: summary.totalOrders, color: "text-blue-600" },
+                  { label: "Active Orders", value: summary.activeOrders, color: "text-yellow-600" },
+                  { label: "Delivered Orders", value: summary.deliveredOrders, color: "text-green-600" },
                 ].map((card) => (
-                  <motion.div
-                    key={card.label}
-                    className="bg-white p-6 rounded-xl shadow hover:shadow-xl flex flex-col items-center transition transform hover:scale-105"
-                  >
+                  <motion.div key={card.label} className="bg-white p-6 rounded-xl shadow hover:shadow-xl flex flex-col items-center transition transform hover:scale-105">
                     <p className="text-gray-500">{card.label}</p>
-                    <p className={`text-3xl font-bold ${card.color}`}>
-                      {card.value}
-                    </p>
+                    <p className={`text-3xl font-bold ${card.color}`}>{card.value}</p>
                   </motion.div>
                 ))}
               </div>
 
               <div className="bg-white p-6 rounded-xl shadow mb-8">
-                <h3 className="text-lg md:text-xl font-semibold mb-4 text-gray-700">
-                  Order Status Distribution
-                </h3>
+                <h3 className="text-lg md:text-xl font-semibold mb-4 text-gray-700">Order Status Distribution</h3>
                 <div className="w-full h-64">
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
-                      <Pie
-                        data={chartData}
-                        dataKey="value"
-                        nameKey="name"
-                        outerRadius={80}
-                        label
-                        isAnimationActive
-                      >
+                      <Pie data={chartData} dataKey="value" nameKey="name" outerRadius={80} label isAnimationActive>
                         {chartData.map((entry, index) => (
                           <Cell key={index} fill={statusColors[entry.name]} />
                         ))}
@@ -243,13 +190,9 @@ const CourierDashboard = () => {
             </motion.div>
           )}
 
+          {/* Orders */}
           {activeTab === "Orders" && (
-            <motion.div
-              key="orders"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-            >
+            <motion.div key="orders" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}>
               <h2 className="text-2xl md:text-3xl font-bold text-gray-700 mb-6 flex items-center gap-2">
                 <ClipboardList className="w-5 h-5" /> Orders
               </h2>
@@ -264,49 +207,31 @@ const CourierDashboard = () => {
                     >
                       <div className="flex-1 space-y-1">
                         <p>
-                          <span className="font-semibold">Order ID:</span>{" "}
-                          {order.id}
+                          <span className="font-semibold">Order ID:</span> {order.id}
                         </p>
                         <p>
-                          <span className="font-semibold">Customer:</span>{" "}
-                          {order.customerName}
+                          <span className="font-semibold">Customer:</span> {order.customerName}
                         </p>
                         <p>
-                          <span className="font-semibold">Address:</span>{" "}
-                          {order.customerStreet}, {order.customerCity},{" "}
-                          {order.customerPostalCode}
+                          <span className="font-semibold">Address:</span> {order.customerStreet}, {order.customerCity}, {order.customerPostalCode}
                         </p>
                         <p>
-                          <span className="font-semibold">Phone:</span>{" "}
-                          {order.customerPhone}
+                          <span className="font-semibold">Phone:</span> {order.customerPhone}
                         </p>
                         <p>
-                          <span className="font-semibold">Total:</span> Rp{" "}
-                          {order.totalPrice?.toLocaleString("id-ID")}
+                          <span className="font-semibold">Total:</span> Rp {order.totalPrice?.toLocaleString("id-ID")}
                         </p>
                         <div className="w-full bg-gray-200 h-2 rounded-full mt-2">
-                          <div
-                            className="h-2 bg-blue-500 rounded-full transition-all duration-500 ease-out"
-                            style={{
-                              width: `${getProgressPercent(order.status)}%`,
-                            }}
-                          />
+                          <div className="h-2 bg-blue-500 rounded-full transition-all duration-500 ease-out" style={{ width: `${getProgressPercent(order.status)}%` }} />
                         </div>
                         <p className="text-sm mt-1">
-                          Status:{" "}
-                          <span className="font-semibold">{order.status}</span>
+                          Status: <span className="font-semibold">{order.status}</span>
                         </p>
                       </div>
                       <div className="mt-3 md:mt-0 md:ml-6">
                         {nextStatus(order.status) ? (
-                          <button
-                            className="bg-blue-400 text-white px-4 py-2 rounded hover:bg-blue-500 shadow transition flex items-center gap-1"
-                            onClick={() =>
-                              updateStatus(order.id, nextStatus(order.status))
-                            }
-                          >
-                            <Check className="w-4 h-4" /> Mark as{" "}
-                            {nextStatus(order.status)}
+                          <button className="bg-blue-400 text-white px-4 py-2 rounded hover:bg-blue-500 shadow transition flex items-center gap-1" onClick={() => updateStatus(order.id, nextStatus(order.status))}>
+                            <Check className="w-4 h-4" /> Mark as {nextStatus(order.status)}
                           </button>
                         ) : (
                           <span className="text-green-600 font-semibold flex items-center gap-1">
@@ -321,13 +246,9 @@ const CourierDashboard = () => {
             </motion.div>
           )}
 
+          {/* History */}
           {activeTab === "History" && (
-            <motion.div
-              key="history"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-            >
+            <motion.div key="history" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}>
               <h2 className="text-2xl md:text-3xl font-bold text-gray-700 mb-6 flex items-center gap-2">
                 <Clock className="w-5 h-5" /> History
               </h2>
@@ -335,37 +256,15 @@ const CourierDashboard = () => {
                 <p className="text-gray-500">No delivered orders yet.</p>
               ) : (
                 <div className="space-y-4">
-                  {deliveredOrders.map((order) => (
-                    <motion.div
-                      key={order.id}
-                      className="p-4 rounded-xl bg-blue-50 border-l-4 border-blue-300 shadow-sm hover:shadow-md transition flex flex-col md:flex-row justify-between items-start md:items-center"
-                    >
+                  {displayedHistory.map((order) => (
+                    <motion.div key={order.id} className="p-4 rounded-xl bg-blue-50 border-l-4 border-blue-300 shadow-sm hover:shadow-md transition flex flex-col md:flex-row justify-between items-start md:items-center">
                       <div className="space-y-1">
-                        <p>
-                          <span className="font-semibold">Order ID:</span>{" "}
-                          {order.id}
-                        </p>
-                        <p>
-                          <span className="font-semibold">Customer:</span>{" "}
-                          {order.customerName}
-                        </p>
-                        <p>
-                          <span className="font-semibold">Address:</span>{" "}
-                          {order.customerStreet}, {order.customerCity},{" "}
-                          {order.customerPostalCode}
-                        </p>
-                        <p>
-                          <span className="font-semibold">Phone:</span>{" "}
-                          {order.customerPhone}
-                        </p>
-                        <p>
-                          <span className="font-semibold">Total:</span> Rp{" "}
-                          {order.totalPrice?.toLocaleString("id-ID")}
-                        </p>
-                        <p>
-                          <span className="font-semibold">Delivered At:</span>{" "}
-                          {new Date(order.createdAt).toLocaleString()}
-                        </p>
+                        <p><span className="font-semibold">Order ID:</span> {order.id}</p>
+                        <p><span className="font-semibold">Customer:</span> {order.customerName}</p>
+                        <p><span className="font-semibold">Address:</span> {order.customerStreet}, {order.customerCity}, {order.customerPostalCode}</p>
+                        <p><span className="font-semibold">Phone:</span> {order.customerPhone}</p>
+                        <p><span className="font-semibold">Total:</span> Rp {order.totalPrice?.toLocaleString("id-ID")}</p>
+                        <p><span className="font-semibold">Delivered At:</span> {new Date(order.createdAt).toLocaleString()}</p>
                       </div>
                       <div className="mt-3 md:mt-0 md:ml-6">
                         <span className="text-green-600 font-semibold flex items-center gap-1">
@@ -374,6 +273,19 @@ const CourierDashboard = () => {
                       </div>
                     </motion.div>
                   ))}
+
+                  {/* Pagination */}
+                  {historyTotalPages > 1 && (
+                    <div className="flex justify-center items-center gap-2 mt-4">
+                      <button disabled={historyPage === 1} onClick={() => setHistoryPage((p) => p - 1)} className="px-3 py-1 rounded bg-blue-200 hover:bg-blue-300 disabled:opacity-50">
+                        Prev
+                      </button>
+                      <span>{historyPage} / {historyTotalPages}</span>
+                      <button disabled={historyPage === historyTotalPages} onClick={() => setHistoryPage((p) => p + 1)} className="px-3 py-1 rounded bg-blue-200 hover:bg-blue-300 disabled:opacity-50">
+                        Next
+                      </button>
+                    </div>
+                  )}
                 </div>
               )}
             </motion.div>

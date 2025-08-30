@@ -1,5 +1,7 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 import {
   LineChart,
   Line,
@@ -25,7 +27,6 @@ const AdminReports = () => {
     try {
       const res = await fetch(`${API_BASE}?type=${type}`);
       const data = await res.json();
-      console.log("Report response:", data);
 
       const formattedData = Object.entries(data.report || {}).map(
         ([period, totalRevenue]) => ({
@@ -58,11 +59,85 @@ const AdminReports = () => {
   );
   const avgOrder = totalOrders > 0 ? Math.round(totalRevenue / totalOrders) : 0;
 
+  const handlePrintPDF = () => {
+    const doc = new jsPDF("p", "pt", "a4");
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const margin = 40;
+    let startY = 60;
+
+    const titleMap = {
+      daily: "Daily Revenue Report",
+      monthly: "Monthly Revenue Report",
+      yearly: "Yearly Revenue Report",
+    };
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(16);
+    doc.text(titleMap[reportType] || "Revenue Report", pageWidth / 2, startY, {
+      align: "center",
+    });
+
+    startY += 30;
+
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(12);
+    doc.text(
+      `Total Revenue: Rp ${totalRevenue.toLocaleString("id-ID")}`,
+      margin,
+      startY
+    );
+    startY += 20;
+    doc.text(`Total Orders: ${totalOrders}`, margin, startY);
+    startY += 20;
+    doc.text(
+      `Avg per Order: Rp ${avgOrder.toLocaleString("id-ID")}`,
+      margin,
+      startY
+    );
+
+    startY += 30;
+
+    autoTable(doc, {
+      startY,
+      margin: { left: margin, right: margin },
+      head: [["Period", "Total Orders", "Total Revenue"]],
+      body: reportData.map((r) => [
+        r.period,
+        r.totalOrders.toLocaleString("id-ID"),
+        `Rp ${r.totalRevenue.toLocaleString("id-ID")}`,
+      ]),
+      styles: { fontSize: 10, cellPadding: 6 },
+      headStyles: {
+        fillColor: [59, 130, 246],
+        textColor: 255,
+        halign: "center",
+      },
+      columnStyles: {
+        1: { halign: "right" }, 
+        2: { halign: "right" }, 
+      },
+      alternateRowStyles: { fillColor: [240, 248, 255] },
+      didDrawPage: (data) => {
+        const str = `Printed: ${new Date().toLocaleString()}`;
+        doc.setFontSize(9);
+        doc.text(
+          str,
+          pageWidth - margin,
+          doc.internal.pageSize.getHeight() - 10,
+          {
+            align: "right",
+          }
+        );
+      },
+    });
+
+    doc.save(`${reportType}-report.pdf`);
+  };
+
   return (
     <div className="min-h-screen p-6 bg-gray-50">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 gap-4">
         <h1 className="text-2xl font-bold text-blue-800">Revenue Reports</h1>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
           <select
             value={reportType}
             onChange={(e) => setReportType(e.target.value)}
@@ -77,6 +152,12 @@ const AdminReports = () => {
             className="px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
           >
             {showChart ? "Hide Chart" : "Show Chart"}
+          </button>
+          <button
+            onClick={handlePrintPDF}
+            className="px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition"
+          >
+            Print PDF
           </button>
         </div>
       </div>
@@ -117,7 +198,8 @@ const AdminReports = () => {
               transition={{ duration: 0.3 }}
             >
               <h2 className="text-lg font-bold text-blue-700 mb-3">
-                Revenue Chart
+                Revenue Chart (
+                {reportType.charAt(0).toUpperCase() + reportType.slice(1)})
               </h2>
               <div className="h-[200px]">
                 <ResponsiveContainer width="100%" height="100%">
